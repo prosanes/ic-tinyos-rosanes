@@ -33,16 +33,37 @@
 
 \section{Análise do Escalonador Padrão}\label{escalonadorpadrao}
 
-O escalonador padrão adota uma política FIFO. Ele provê as interfaces \textit{Scheduler} e \textit{TaskBasic}. As tarefas se conectam ao escalonador através da \textit{TaskBasic}. Ao compilar um programa em NesC, todas tarefas básicas viram uma interface desse tipo. Porém, para se diferenciarem é criado um parâmetro na interface\footnote{Para mais informações sobre interfaces parametrizadas olhar o livro TinyOS Programming\cite[s. 8.3 e 9]{tinyosprogramming}.}.
+O escalonador padrão adota uma política FIFO. Ele provê as interfaces \textit{Scheduler} e \textit{TaskBasic}.
+As tarefas se conectam ao escalonador através da \textit{TaskBasic}. Ao compilar um programa em NesC, todas tarefas
+básicas viram uma interface desse tipo. Porém, para se diferenciarem é criado um parâmetro na interface
+\footnote{Para mais informações sobre interfaces parametrizadas olhar o livro TinyOS Programming\cite[s. 8.3 e 9]{tinyosprogramming}.}.
 
-A fila implementada \textbf{não} funciona como um vetor circular. Existe um 'ponteiro' para a cabeça e um para o rabo, além de um vetor de tamanho 255 (O que limita a quantidade máxima de tarefas). A cabeça contém o identificador do primeiro na fila. A célula cujo index corresponde ao \textit{id} do primeiro contém o \textit{id} do segundo, e assim em diante. Chega-se ao fim da fila quando a célula contém um identificador de vázio.
+A fila implementada \textbf{não} funciona como um vetor circular. Existe um 'ponteiro' para a cabeça e um para o rabo,
+além de um vetor de tamanho 255 (O que limita a quantidade máxima de tarefas). A cabeça contém o identificador do 
+primeiro na fila. A célula cujo index corresponde ao \textit{id} do primeiro contém o \textit{id} do segundo, e assim em 
+diante. Chega-se ao fim da fila quando a célula contém um identificador de vázio.
 
 %\includegraphics[scale=0.5]{fila.png}
+
+\section{Análise do Escalonador \textit{Earliest Deadline First}}\label{escalonadoredf}
+
+Este escalonador aceita tarefas com deadline e elege as que menor \textit{deadline} para executar. A interface usada para criar
+esse tipo de tarefas é \textit{TaskDeadline}. O \textit{deadline} é passado por parâmetro pela função \textit{postTask}.
+As \textit{TaskBasic} também são aceitas como recomendado pelo TEP
+106\cite{tep106}.
+
+Em contraste, o escalonador não segue outra recomendação. Ele não elimina a possibilidade de \textit{starvation} pois as tarefas
+básicas só são atendidas quando não há nenhuma com \textit{deadline} para ser atendida. A fila de prioridades é
+implementada da mesma forma que a do escalonador padrão\ref{escalonadorpadrao}, a única mudança está na inserção. Para
+inserir, a fila é percorrida do começo até o fim, procurando-se o local exato de inserção. O problema é que essa
+operação custa $\bigcirc(n)$. Isso poderia ser evitado implementando uma \textit{heap} que tem complexidade de inserção
+de $\bigcirc(\log n)$
 
 \pagebreak
 
 \begin{thebibliography}{9}
 \bibitem{tinyosprogramming} P. Levis e D. Gay. TinyOS Programming, capítulo 11, 2009.
+\bibitem{tep106} P. Levis e C. Sharp. TEP 106: Schedulers and Tasks. http://www.tinyos.net/tinyos-2.x/doc/html/tep106.html
 \end{thebibliography}
 
 \end{document}

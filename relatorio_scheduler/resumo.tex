@@ -1,0 +1,48 @@
+\documentclass[a4paper,onecolumn, 10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[portuguese,brazil]{babel}
+\usepackage{ae}
+
+\usepackage[pdftex]{graphicx} % Exporta para pdf e aceita figuras
+%\usepackage{indentfirst} % Identa primeiro paragrafo
+\usepackage{textcomp}
+\usepackage[margin=30mm]{geometry}
+\usepackage[pdfauthor={Pedro Rosanes},% Insere metadados com o nome do autor
+	    pdftitle={Relatório dos Componentes de Escalonamento},% Título que será mostrado na janela do PDF
+	    pdftex]{hyperref} % Usa hiperlinks no decorrer do texto
+
+%\parskip 7.2pt           % sets spacing between paragraphs
+\renewcommand{\baselinestretch}{1.5}
+
+\title{Relatório dos Componentes de Escalonamento}
+\author{Pedro Rosanes}
+%\date{}
+
+\begin{document}
+
+\maketitle
+
+
+%\begin{titlepage}
+%\maketitle
+%\tableofcontents % Sumário
+%\end{titlepage}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Análise do Escalonador Padrão}\label{escalonadorpadrao}
+
+O escalonador padrão adota uma política FIFO. Ele provê as interfaces \textit{Scheduler} e \textit{TaskBasic}. As tarefas se conectam ao escalonador através da \textit{TaskBasic}. Ao compilar um programa em NesC, todas tarefas básicas viram uma interface desse tipo. Porém, para se diferenciarem é criado um parâmetro na interface\footnote{Para mais informações sobre interfaces parametrizadas olhar o livro TinyOS Programming\cite[s. 8.3 e 9]{tinyosprogramming}.}.
+
+A fila implementada \textbf{não} funciona como um vetor circular. Existe um 'ponteiro' para a cabeça e um para o rabo, além de um vetor de tamanho 255 (O que limita a quantidade máxima de tarefas). A cabeça contém o identificador do primeiro na fila. A célula cujo index corresponde ao \textit{id} do primeiro contém o \textit{id} do segundo, e assim em diante. Chega-se ao fim da fila quando a célula contém um identificador de vázio.
+
+%\includegraphics[scale=0.5]{fila.png}
+
+\pagebreak
+
+\begin{thebibliography}{9}
+\bibitem{tinyosprogramming} P. Levis e D. Gay. TinyOS Programming, capítulo 11, 2009.
+\end{thebibliography}
+
+\end{document}

@@ -9,10 +9,11 @@ configuration edfAppC
 }
 implementation
 {
-  components MainC, edfC;
-
+  components MainC, edfC, LedsC;
 
   edfC -> MainC.Boot;
+  edfC.Leds -> LedsC;
+  
 
 }
 

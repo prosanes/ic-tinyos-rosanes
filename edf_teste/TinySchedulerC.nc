@@ -43,10 +43,14 @@ implementation {
   components SchedulerDeadlineP as Sched;
   components McuSleepC as Sleep;
   //components CounterMilliC;
+    components LedsC;
+
+
   Scheduler = Sched;
   TaskBasic = Sched;
   TaskDeadline = Sched;
   Sched.McuSleep -> Sleep;
+  Sched.Leds -> LedsC;
 
   //Sched.LocalTime -> CounterMilliC;
 }

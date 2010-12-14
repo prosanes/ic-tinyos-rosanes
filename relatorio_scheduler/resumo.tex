@@ -57,13 +57,20 @@ básicas só são atendidas quando não há nenhuma com \textit{deadline} para s
 implementada da mesma forma que a do escalonador padrão\ref{escalonadorpadrao}, a única mudança está na inserção. Para
 inserir, a fila é percorrida do começo até o fim, procurando-se o local exato de inserção. O problema é que essa
 operação custa $\bigcirc(n)$. Isso poderia ser evitado implementando uma \textit{heap} que tem complexidade de inserção
-de $\bigcirc(\log n)$
+de $\bigcirc(\log n)$.
+
+Tive problemas com o componente \textit{Counter32khzC}, pois ele não existe para o \textit{micaz}. Para poder compilar o
+escalonador tive de tirá-lo. Ele era usado para calcular a hora atual, e somar ao deadline. Sem esse componente, o
+escalonador virá um escalonador de prioridades (mínimo). Porém, o escalonador não está rodando o \textit{taskLoop},
+apesar de inicializar e verificar se existe tarefas na etapa de inicialização\cite{bootsequence}.
 
 \pagebreak
 
 \begin{thebibliography}{9}
 \bibitem{tinyosprogramming} P. Levis e D. Gay. TinyOS Programming, capítulo 11, 2009.
-\bibitem{tep106} P. Levis e C. Sharp. TEP 106: Schedulers and Tasks. http://www.tinyos.net/tinyos-2.x/doc/html/tep106.html
+\bibitem{tep106} P. Levis e C. Sharp. TEP 106: Schedulers and Tasks.
+                    \url{http://www.tinyos.net/tinyos-2.x/doc/html/tep106.html}
+\bibitem{bootsequence} Boot Sequence, TinyOS Tutorial. \url{http://docs.tinyos.net/index.php/Boot_Sequence}
 \end{thebibliography}
 
 \end{document}

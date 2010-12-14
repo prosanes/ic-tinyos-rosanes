@@ -10,6 +10,26 @@
 \usepackage[pdfauthor={Pedro Rosanes},% Insere metadados com o nome do autor
 	    pdftitle={Relatório dos Componentes de Escalonamento},% Título que será mostrado na janela do PDF
 	    pdftex]{hyperref} % Usa hiperlinks no decorrer do texto
+\usepackage{color}
+\usepackage{listings} 
+%\lstset{language=C++}
+\lstset{ %
+    language=C++,                % choose the language of the code
+        basicstyle=\footnotesize,       % the size of the fonts that are used for the code
+        backgroundcolor=\color{white},  % choose the background color. You must add
+        showspaces=false,               % show spaces adding particular underscores
+        showstringspaces=false,         % underline spaces within strings
+        showtabs=false,                 % show tabs within strings adding particular underscores
+        frame=single,                   % adds a frame around the code
+        tabsize=2,                  % sets default tabsize to 2 spaces
+        captionpos=b,                   % sets the caption-position to bottom
+        breaklines=true,                % sets automatic line breaking
+        breakatwhitespace=false,        % sets if automatic breaks should only happen at whitespace
+        title=\lstname,                 % show the filename of files included with \lstinputlisting;
+    % also try caption instead of title
+        escapeinside={\%*}{*)},         % if you want to add a comment within your code
+        morekeywords={*,...}            % if you want to add more keywords to the set
+}
 
 %\parskip 7.2pt           % sets spacing between paragraphs
 \renewcommand{\baselinestretch}{1.5}
@@ -59,10 +79,54 @@ inserir, a fila é percorrida do começo até o fim, procurando-se o local exato
 operação custa $\bigcirc(n)$. Isso poderia ser evitado implementando uma \textit{heap} que tem complexidade de inserção
 de $\bigcirc(\log n)$.
 
-Tive problemas com o componente \textit{Counter32khzC}, pois ele não existe para o \textit{micaz}. Para poder compilar o
-escalonador tive de tirá-lo. Ele era usado para calcular a hora atual, e somar ao deadline. Sem esse componente, o
-escalonador virá um escalonador de prioridades (mínimo). Porém, o escalonador não está rodando o \textit{taskLoop},
-apesar de inicializar e verificar se existe tarefas na etapa de inicialização\cite{bootsequence}.
+A princípio tive problemas com o componente \textit{Counter32khzC}, 
+pois ele não existe para o \textit{micaz}. Para poder compilar o
+escalonador tive de tirá-lo. Ele era usado para calcular a hora atual, e somar ao deadline. Sem esse componente, temos
+um escalonador de prioridades (mínimo). 
+
+Descobri que tarefas se comportam de forma diferente no simulador. Portanto tive de adicionar funções que lidam com
+eventos no \textit{tossim}. Essas funções foram retiradas do arquivo
+\textit{opt/tinyos-2.1.1/tos/lib/tossim/SimSchedulerBasicP.nc}.
+Primeiro é preciso adicionar ao \textit{Scheduler}:
+\begin{lstlisting}[frame=single]
+  bool sim_scheduler_event_pending = FALSE;
+  sim_event_t sim_scheduler_event;
+
+  int sim_config_task_latency() {return 100;}
+  
+  void sim_scheduler_submit_event() {
+    if (sim_scheduler_event_pending == FALSE) {
+      sim_scheduler_event.time = sim_time() + sim_config_task_latency();
+      sim_queue_insert(&sim_scheduler_event);
+      sim_scheduler_event_pending = TRUE;
+    }
+  }
+
+  void sim_scheduler_event_handle(sim_event_t* e) {
+    sim_scheduler_event_pending = FALSE;
+    if (call Scheduler.runNextTask()) {
+      sim_scheduler_submit_event();
+    }
+  }
+
+  void sim_scheduler_event_init(sim_event_t* e) {
+    e->mote = sim_node();
+    e->force = 0;
+    e->data = NULL;
+    e->handle = sim_scheduler_event_handle;
+    e->cleanup = sim_queue_cleanup_none;
+  }
+\end{lstlisting}
+Depois, no \textit{Scheduler.init()} adicione:
+\begin{lstlisting}[frame=single]
+  sim_scheduler_event_pending = FALSE;
+  sim_scheduler_event_init(&sim_scheduler_event);
+\end{lstlisting}
+E por ultimo, no \textit{Scheduler.postTask()}, caso a tarefa tenha sido colocada na fila, adicione:
+\begin{lstlisting}[frame=single]
+  sim_scheduler_submit_event();
+\end{lstlisting}
+
 
 \pagebreak
 

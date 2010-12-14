@@ -44,13 +44,20 @@
  * @date   January 19 2005
  */
 
+/**
+ * Modificado para funcionar em simulacoes também.
+ *
+ */
+
 #include "hardware.h"
+#include <sim_event_queue.h>
 
 module SchedulerDeadlineP {
     provides interface Scheduler;
     provides interface TaskBasic[uint8_t id];
     provides interface TaskDeadline<TMilli>[uint8_t id];
     uses interface McuSleep;
+    uses interface Leds;
     //uses interface LocalTime<TMilli>;
 }
 implementation
@@ -70,6 +77,55 @@ implementation
     volatile uint8_t d_next[NUM_DTASKS];
     volatile uint32_t d_time[NUM_DTASKS];
 
+    // Aqui entram as funcoes responsaveis pelos eventos do simulador
+    // As tasks são simuladas por eventos no TOSSIM
+
+    bool sim_scheduler_event_pending = FALSE;
+    sim_event_t sim_scheduler_event;
+
+    int sim_config_task_latency() {return 100;}
+
+
+    /* Only enqueue the event for execution if it is
+       not already enqueued. If there are more tasks in the
+       queue, the event will re-enqueue itself (see the handle
+       function). */
+
+    void sim_scheduler_submit_event() {
+        if (sim_scheduler_event_pending == FALSE) {
+            sim_scheduler_event.time = sim_time() + sim_config_task_latency();
+            sim_queue_insert(&sim_scheduler_event);
+            sim_scheduler_event_pending = TRUE;
+        }
+    }
+
+    void sim_scheduler_event_handle(sim_event_t* e) {
+        sim_scheduler_event_pending = FALSE;
+
+        // If we successfully executed a task, re-enqueue the event. This
+        // will always succeed, as sim_scheduler_event_pending was just
+        // set to be false.  Note that this means there will be an extra
+        // execution (on an empty task queue). We could optimize this
+        // away, but this code is cleaner, and more accurately reflects
+        // the real TinyOS main loop.
+
+        if (call Scheduler.runNextTask()) {
+            sim_scheduler_submit_event();
+        }
+    }
+
+
+    /* Initialize a scheduler event. This should only be done
+     * once, when the scheduler is initialized. */
+    void sim_scheduler_event_init(sim_event_t* e) {
+        e->mote = sim_node();
+        e->force = 0;
+        e->data = NULL;
+        e->handle = sim_scheduler_event_handle;
+        e->cleanup = sim_queue_cleanup_none;
+    }
+
+
     // Helper functions (internal functions) intentionally do not have atomic
     // sections.  It is left as the duty of the exported interface functions to
     // manage atomicity to minimize chances for binary code bloat.
@@ -79,6 +135,7 @@ implementation
     // mark the task as not in the queue
     inline uint8_t popMTask()
     {
+        dbg("Deadline", "Poped a Mtask (ou nao)\n");
         if( m_head != NO_TASK )
         {
             uint8_t id = m_head;
@@ -98,6 +155,7 @@ implementation
 
     bool isMWaiting( uint8_t id )
     {
+        dbg("Deadline", "isMWaiting: %d\n", (m_next[id] != NO_TASK) || (m_tail == id));
         return (m_next[id] != NO_TASK) || (m_tail == id);
     }
 
@@ -126,6 +184,7 @@ implementation
 
     inline uint8_t popDTask()
     {
+        dbg("Deadline", "Poped a Dtask (ou nao)\n");
         if( d_head != NO_TASK )
         {
             uint8_t id = d_head;
@@ -145,11 +204,13 @@ implementation
 
     bool isDWaiting( uint8_t id )
     {
+        dbg("Deadline", "isDWaiting: %d\n", (m_next[id] != NO_TASK) || (m_tail == id));
         return (d_next[id] != NO_TASK) || (d_tail == id);
     }
 
     bool pushDTask( uint8_t id, uint32_t deadline )
     {
+        dbg("Deadline", "pushDTask %i\n", (int)id);
         if( !isDWaiting(id) )
         {
             if( d_head == NO_TASK )
@@ -200,7 +261,9 @@ implementation
             memset( (void *)d_next, NO_TASK, sizeof(d_next) );
             d_head = NO_TASK;
             d_tail = NO_TASK;
-            //      sim_scheduler_event_init(&sim_scheduler_event);
+
+            sim_scheduler_event_pending = FALSE;
+            sim_scheduler_event_init(&sim_scheduler_event);
         }
     }
 
@@ -232,6 +295,7 @@ implementation
     command void Scheduler.taskLoop()
     {
         dbg("Deadline", "Taskloop\n");
+        call Leds.led0Toggle();
         for (;;)
         {
             uint8_t nextDTask = NO_TASK;
@@ -262,8 +326,17 @@ implementation
 
     async command error_t TaskBasic.postTask[uint8_t id]()
     {
+        error_t result;
+
         dbg("Deadline", "postTaskBasic\n");
-        atomic return pushMTask(id) ? SUCCESS : EBUSY;
+        atomic {
+            result = pushMTask(id) ? SUCCESS : EBUSY;
+        }
+        if (result == SUCCESS)
+            sim_scheduler_submit_event();
+
+        return result;
+        
     }
 
     default event void TaskBasic.runTask[uint8_t id]()
@@ -274,8 +347,16 @@ implementation
 
     async command error_t TaskDeadline.postTask[uint8_t id](uint32_t deadline)
     {
-        atomic return pushDTask(id, deadline) ? SUCCESS : EBUSY;
+        error_t result;
 
+        dbg("Deadline", "postTaskBasic\n");
+        atomic {
+            result = pushDTask(id, deadline) ? SUCCESS : EBUSY;
+        }
+        if (result == SUCCESS)
+            sim_scheduler_submit_event();
+
+        return result;
     }
 
     default event void TaskDeadline.runTask[uint8_t id]()

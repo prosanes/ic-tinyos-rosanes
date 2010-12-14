@@ -49,9 +49,9 @@
 module SchedulerDeadlineP {
     provides interface Scheduler;
     provides interface TaskBasic[uint8_t id];
-    provides interface TaskDeadline<T32khz>[uint8_t id];
+    provides interface TaskDeadline<TMilli>[uint8_t id];
     uses interface McuSleep;
-    uses interface LocalTime<T32khz>;
+    //uses interface LocalTime<TMilli>;
 }
 implementation
 {
@@ -103,6 +103,7 @@ implementation
 
     bool pushMTask( uint8_t id )
     {
+        dbg("Deadline", "pushMTask %i\n", (int)id);
         if( !isMWaiting(id) )
         {
             if( m_head == NO_TASK )
@@ -160,7 +161,7 @@ implementation
             {
                 uint8_t t_curr = d_head;
                 uint8_t t_prev = d_head;
-                uint32_t local = call LocalTime.get();
+                uint32_t local = 0;  //call LocalTime.get();
                 while (d_time[t_curr] - local <= deadline &&
                         t_curr != NO_TASK) {
                     t_prev = t_curr;
@@ -177,7 +178,8 @@ implementation
                     }
                 }
             }
-            d_time[id] = call LocalTime.get() + deadline;
+            //d_time[id] = call LocalTime.get() + deadline;
+            d_time[id] = 0 + deadline;
             return TRUE;
         }
         else
@@ -189,6 +191,7 @@ implementation
 
     command void Scheduler.init()
     {
+        dbg("Deadline", "init\n");
         atomic
         {
             memset( (void *)m_next, NO_TASK, sizeof(m_next) );
@@ -204,12 +207,15 @@ implementation
     command bool Scheduler.runNextTask()
     {
         uint8_t nextTask;
+        dbg("Deadline", "runNextTask\n");
         atomic
         {
             nextTask = popDTask();
+            dbg("Deadline", "popDTask: %i\n", (int)nextTask);
             if( nextTask == NO_TASK )
             {
                 nextTask = popMTask();
+                dbg("Deadline", "popMTask: %i\n", (int)nextTask);
                 if (nextTask == NO_TASK) {
                     return FALSE;
                 }
@@ -225,6 +231,7 @@ implementation
 
     command void Scheduler.taskLoop()
     {
+        dbg("Deadline", "Taskloop\n");
         for (;;)
         {
             uint8_t nextDTask = NO_TASK;
@@ -255,6 +262,7 @@ implementation
 
     async command error_t TaskBasic.postTask[uint8_t id]()
     {
+        dbg("Deadline", "postTaskBasic\n");
         atomic return pushMTask(id) ? SUCCESS : EBUSY;
     }
 

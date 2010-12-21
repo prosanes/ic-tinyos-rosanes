@@ -67,20 +67,20 @@ diante. Chega-se ao fim da fila quando a célula contém um identificador de vá
 
 \section{Análise do Escalonador \textit{Earliest Deadline First}}\label{escalonadoredf}
 
-Este escalonador aceita tarefas com deadline e elege as que menor \textit{deadline} para executar. A interface usada para criar
+Este escalonador aceita tarefas com deadline e elege as que tem menor \textit{deadline} para executar. A interface usada para criar
 esse tipo de tarefas é \textit{TaskDeadline}. O \textit{deadline} é passado por parâmetro pela função \textit{postTask}.
 As \textit{TaskBasic} também são aceitas como recomendado pelo TEP
 106\cite{tep106}.
 
-Em contraste, o escalonador não segue outra recomendação. Ele não elimina a possibilidade de \textit{starvation} pois as tarefas
-básicas só são atendidas quando não há nenhuma com \textit{deadline} para ser atendida. A fila de prioridades é
+Em contraste, o escalonador não segue outra recomendação: não elimina a possibilidade de \textit{starvation} pois as tarefas
+básicas só são atendidas quando não há nenhuma com \textit{deadline} esperando para executar. A fila de prioridades é
 implementada da mesma forma que a do escalonador padrão\ref{escalonadorpadrao}, a única mudança está na inserção. Para
 inserir, a fila é percorrida do começo até o fim, procurando-se o local exato de inserção. O problema é que essa
 operação custa $\bigcirc(n)$. Isso poderia ser evitado implementando uma \textit{heap} que tem complexidade de inserção
 de $\bigcirc(\log n)$.
 
 A princípio tive problemas com o componente \textit{Counter32khzC}, 
-pois ele não existe para o \textit{micaz}. Para poder compilar o
+pois ele não existe para o \textit{micaz} na simulação. Para poder compilar o
 escalonador tive de tirá-lo. Ele era usado para calcular a hora atual, e somar ao deadline. Sem esse componente, temos
 um escalonador de prioridades (mínimo). 
 

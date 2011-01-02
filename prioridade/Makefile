@@ -1,0 +1,3 @@
+COMPONENT=prioridadeAppC
+include $(MAKERULES)
+

@@ -14,6 +14,8 @@ implementation
   edfC -> MainC.Boot;
   edfC.Leds -> LedsC;
   edfC.tarefaEDF -> TinySchedulerC.TaskDeadline[unique("TinySchedulerC.TaskDeadline")]; 
-
+  edfC.tarefaEDF2 -> TinySchedulerC.TaskDeadline[unique("TinySchedulerC.TaskDeadline")]; 
+  edfC.tarefaEDF3 -> TinySchedulerC.TaskDeadline[unique("TinySchedulerC.TaskDeadline")]; 
+  edfC.tarefaEDF4 -> TinySchedulerC.TaskDeadline[unique("TinySchedulerC.TaskDeadline")]; 
 }
 

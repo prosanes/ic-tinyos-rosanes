@@ -35,23 +35,20 @@
 #include "Timer.h"
 
 configuration TinySchedulerC {
-  provides interface Scheduler;
-  provides interface TaskBasic[uint8_t id];
-  provides interface TaskDeadline<TMilli>[uint8_t id];
+    provides interface Scheduler;
+    provides interface TaskBasic[uint8_t id];
+    provides interface TaskDeadline<TMilli>[uint8_t id];
 }
 implementation {
-  components SchedulerDeadlineP as Sched;
-  components McuSleepC as Sleep;
-  //components CounterMilliC;
+    components SchedulerDeadlineP_heap as Sched;
+    components McuSleepC as Sleep;
     components LedsC;
 
 
-  Scheduler = Sched;
-  TaskBasic = Sched;
-  TaskDeadline = Sched;
-  Sched.McuSleep -> Sleep;
-  Sched.Leds -> LedsC;
-
-  //Sched.LocalTime -> CounterMilliC;
+    Scheduler = Sched;
+    TaskBasic = Sched;
+    TaskDeadline = Sched;
+    Sched.McuSleep -> Sleep;
+    Sched.Leds -> LedsC;
 }
 

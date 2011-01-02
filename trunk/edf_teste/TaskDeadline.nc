@@ -61,6 +61,7 @@ interface TaskDeadline<precision_tag> {
    * concurrency model, the codes invoked from <tt>run()</tt> signals
    * execute atomically with respect to one another, but can be
    * preempted by async commands/events.
+   id runTask();
    */
   event void runTask();
 }

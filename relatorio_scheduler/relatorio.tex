@@ -75,17 +75,67 @@ As \textit{TaskBasic} também são aceitas como recomendado pelo TEP
 Em contraste, o escalonador não segue outra recomendação: não elimina a possibilidade de \textit{starvation} pois as tarefas
 básicas só são atendidas quando não há nenhuma com \textit{deadline} esperando para executar. A fila de prioridades é
 implementada da mesma forma que a do escalonador padrão\ref{escalonadorpadrao}, a única mudança está na inserção. Para
-inserir, a fila é percorrida do começo até o fim, procurando-se o local exato de inserção. O problema é que essa
-operação custa $\bigcirc(n)$. Isso poderia ser evitado implementando uma \textit{heap} que tem complexidade de inserção
-de $\bigcirc(\log n)$.
+inserir, a fila é percorrida do começo até o fim, procurando-se o local exato de inserção.
+Por tanto o custo de inserir é $\bigcirc(n)$, e o custo de retirar da fila é $\bigcirc(1)$. 
+Uma possível modificação seria utilizar uma \textit{heap}. Mudando o custo de inserção e de retirada para $\bigcirc(\log
+n)$.
 
 A princípio tive problemas com o componente \textit{Counter32khzC}, 
 pois ele não existe para o \textit{micaz} na simulação. Para poder compilar o
 escalonador tive de tirá-lo. Ele era usado para calcular a hora atual, e somar ao deadline. Sem esse componente, temos
 um escalonador de prioridades (mínimo). 
 
-Descobri que tarefas se comportam de forma diferente no simulador. Portanto tive de adicionar funções que lidam com
-eventos no \textit{tossim}. Essas funções foram retiradas do arquivo
+
+\section{Configuração de um Escalonador não Padrão}\label{configescalonador_naopadrao}
+Para substituir o escalonador padrão é preciso colocar uma configuração com o nome \textit{TinySchedulerC} no diretório
+da aplicação. Dentro desta configuração, amarra-se a interface \textit{Scheduler} a implementação do escalonador. Por
+exemplo:
+\begin{lstlisting}
+configuration TinySchedulerC 
+{
+    provides interface Scheduler;
+    ...
+}
+implementation 
+{
+    components SchedulerDeadlineP;
+    ...
+
+    Scheduler = SchedulerDeadlineP;
+    ...
+}
+\end{lstlisting}
+
+É preciso também criar a interface para o novo tipo de tarefa, com o comando \textit{postTask} e o evento
+\textit{runTask}. Por exemplo:
+\begin{lstlisting}
+interface TaskDeadline<precision_tag> { 
+    async command error_t postTask(uint32_t deadline);
+    event void runTask();
+}
+\end{lstlisting}
+
+Por ultimo, deve-se amarrar a interface da tarefa a do escalonador. Por exemplo:
+\begin{lstlisting}
+configuration TinySchedulerC 
+{
+    provides interface Scheduler;
+    provides interface TaskBasic[uint8_t id];
+    provides interface TaskDeadline<TMilli>[uint8_t id];
+}
+implementation 
+{
+    components SchedulerDeadlineP;
+    ...
+
+    Scheduler = SchedulerDeadlineP;
+    TaskBasic = Sched;
+    TaskDeadline = Sched;
+}
+\end{lstlisting}
+
+Para que o escalonador funcione corretamente no simulador é preciso adicionar funções que lidam com eventos no
+\textit{tossim}. Essas funções foram retiradas do arquivo
 \textit{opt/tinyos-2.1.1/tos/lib/tossim/SimSchedulerBasicP.nc}.
 Primeiro é preciso adicionar ao \textit{Scheduler}:
 \begin{lstlisting}[frame=single]
@@ -126,8 +176,6 @@ E por ultimo, no \textit{Scheduler.postTask()}, caso a tarefa tenha sido colocad
 \begin{lstlisting}[frame=single]
   sim_scheduler_submit_event();
 \end{lstlisting}
-
-
 \pagebreak
 
 \begin{thebibliography}{9}

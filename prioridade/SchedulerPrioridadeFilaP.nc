@@ -1,12 +1,13 @@
 #include "hardware.h"
 #include <sim_event_queue.h>
 
+#define NO_STARVATION_NUM 10
+
 module SchedulerPrioridadeFilaP {
     provides interface Scheduler;
     provides interface TaskBasic[uint8_t id];
     provides interface TaskPrioridade[uint8_t id];
     uses interface McuSleep;
-    uses interface Leds;
 }
 implementation
 {
@@ -240,28 +241,40 @@ implementation
 
     command void Scheduler.taskLoop()
     {
+        uint8_t max_ptask = 0;
         dbg("Prioridade", "Taskloop\n");
-        call Leds.led0Toggle();
         for (;;)
         {
             uint8_t nextPTask = NO_TASK;
             uint8_t nextMTask = NO_TASK;
 
-            atomic
+            if (max_ptask > NO_STARVATION_NUM)
             {
-                while ((nextPTask = popPTask()) == NO_TASK &&
-                        (nextMTask = popMTask()) == NO_TASK)
+                max_ptask = 0;
+                nextMTask = popMTask();
+                if (nextMTask != NO_TASK)
+                    signal TaskBasic.runTask[nextMTask]();
+            }
+            if (nextMTask == NO_TASK)
+            {
+                atomic
                 {
-                    call McuSleep.sleep();
+                    while ((nextPTask = popPTask()) == NO_TASK &&
+                            (nextMTask = popMTask()) == NO_TASK)
+                    {
+                        call McuSleep.sleep();
+                    }   
                 }
-            }
-            if (nextPTask != NO_TASK) {
-                dbg("Prioridade", "Running prioridade task %i\n", (int)nextPTask);
-                signal TaskPrioridade.runTask[nextPTask]();
-            }
-            else if (nextMTask != NO_TASK) {
-                dbg("Prioridade", "Running basic task %i\n", (int)nextMTask);
-                signal TaskBasic.runTask[nextMTask]();
+                if (nextPTask != NO_TASK) {
+                    dbg("Prioridade", "Running prioridade task %i\n", (int)nextPTask);
+                    max_ptask++;
+                    signal TaskPrioridade.runTask[nextPTask]();
+                }
+                else if (nextMTask != NO_TASK) {
+                    dbg("Prioridade", "Running basic task %i\n", (int)nextMTask);
+                    max_ptask = 0;
+                    signal TaskBasic.runTask[nextMTask]();
+                }
             }
         }
     }

@@ -1,7 +1,14 @@
-#include "hardware.h"
-#include <sim_event_queue.h>
-
 #define NO_STARVATION_NUM 10
+
+//Define this to use on the TOSSIM
+//#define SIM__
+
+#include "hardware.h"
+
+#ifdef SIM__
+#include <sim_event_queue.h>
+#endif
+
 
 module SchedulerPrioridadeFilaP {
     provides interface Scheduler;
@@ -26,6 +33,7 @@ implementation
     volatile uint8_t p_next[NUM_PTASKS];
     volatile uint8_t p_prioridade[NUM_PTASKS];
 
+    #ifdef SIM__
     // Aqui entram as funcoes responsaveis pelos eventos do simulador
     // As tasks são simuladas por eventos no TOSSIM
 
@@ -73,7 +81,7 @@ implementation
         e->handle = sim_scheduler_event_handle;
         e->cleanup = sim_queue_cleanup_none;
     }
-
+    #endif
 
     // Helper functions (internal functions) intentionally do not have atomic
     // sections.  It is left as the duty of the exported interface functions to
@@ -85,21 +93,21 @@ implementation
     inline uint8_t popMTask()
     {
         dbg("Prioridade", "Poped a Mtask (ou nao)\n");
-        if( m_head != NO_TASK )
-        {
-            uint8_t id = m_head;
-            m_head = m_next[m_head];
-            if( m_head == NO_TASK )
+            if( m_head != NO_TASK )
             {
-                m_tail = NO_TASK;
+                uint8_t id = m_head;
+                m_head = m_next[m_head];
+                if( m_head == NO_TASK )
+                {
+                    m_tail = NO_TASK;
+                }
+                m_next[id] = NO_TASK;
+                return id;
             }
-            m_next[id] = NO_TASK;
-            return id;
-        }
-        else
-        {
-            return NO_TASK;
-        }
+            else
+            {
+                return NO_TASK;
+            }
     }
 
     bool isMWaiting( uint8_t id )
@@ -208,9 +216,11 @@ implementation
             memset( (void *)p_next, NO_TASK, sizeof(p_next) );
             p_head = NO_TASK;
             p_tail = NO_TASK;
-
+            
+            #ifdef SIM__
             sim_scheduler_event_pending = FALSE;
             sim_scheduler_event_init(&sim_scheduler_event);
+            #endif
         }
     }
 
@@ -251,7 +261,9 @@ implementation
             if (max_ptask > NO_STARVATION_NUM)
             {
                 max_ptask = 0;
+                atomic {
                 nextMTask = popMTask();
+                }
                 if (nextMTask != NO_TASK)
                     signal TaskBasic.runTask[nextMTask]();
             }
@@ -291,8 +303,10 @@ implementation
         atomic {
             result = pushMTask(id) ? SUCCESS : EBUSY;
         }
+        #ifdef SIM__
         if (result == SUCCESS)
             sim_scheduler_submit_event();
+        #endif
 
         return result;
         
@@ -312,8 +326,10 @@ implementation
         atomic {
             result = pushPTask(id, prioridade) ? SUCCESS : EBUSY;
         }
+        #ifdef SIM__
         if (result == SUCCESS)
             sim_scheduler_submit_event();
+        #endif
 
         return result;
     }
@@ -321,8 +337,6 @@ implementation
     default event void TaskPrioridade.runTask[uint8_t id]()
     {
     }
-
-
 
 }
 

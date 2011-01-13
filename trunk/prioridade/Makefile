@@ -1,3 +1,3 @@
-COMPONENT=prioridadeAppC
+COMPONENT=aplicacaoTesteAppC
 include $(MAKERULES)
 

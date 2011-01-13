@@ -8,13 +8,10 @@ configuration TinySchedulerC {
 implementation {
     components SchedulerPrioridadeFilaP as Sched;
     components McuSleepC as Sleep;
-    components LedsC;
-
 
     Scheduler = Sched;
     TaskBasic = Sched;
     TaskPrioridade = Sched;
     Sched.McuSleep -> Sleep;
-    Sched.Leds -> LedsC;
 }
 

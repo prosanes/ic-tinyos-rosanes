@@ -42,25 +42,29 @@ implementation
     */
     event void TimerDoSensor.fired()
     {
-        call TarefaTimer_PedeSensoreamento.postTask(0);
+        call TarefaTimer_PedeSensoreamento.postTask(10);
     }
 
     event void TimerComunicacaoPC.fired()
     {
-        call TarefaRadio_ComunicacaoPC.postTask(0);
+        call TarefaRadio_ComunicacaoPC.postTask(50);
     }
 
     /* Tarefas
     */
     event void TarefaTimer_PedeSensoreamento.runTask()
     {
+        call Leds.led0Toggle();
         call Sensor.read();
     }
 
     event void TarefaRadio_ComunicacaoPC.runTask()
     {
+        msgSerial_t* pacotePC_payload;
+        call Leds.led1Toggle();
+
         //call comando de send para o PC
-        msgSerial_t* pacotePC_payload = (msgSerial_t*) call Packet.getPayload(&pacotePC, sizeof(msgSerial_t));
+        pacotePC_payload = (msgSerial_t*) call Packet.getPayload(&pacotePC, sizeof(msgSerial_t));
         if (pacotePC_payload == NULL) 
             {return;}
         if (call Packet.maxPayloadLength() < sizeof(msgSerial_t)) 
@@ -72,6 +76,8 @@ implementation
 
     event void TarefaSensor_CalculaMedia.runTask()
     {
+        call Leds.led2Toggle();
+
         numLeitura++;
         if (numLeitura > 1)
             mediaLeitura = (mediaLeitura + ultimaLeitura)/2;
@@ -84,7 +90,7 @@ implementation
     event void Sensor.readDone(error_t result, uint16_t data)
     {
         ultimaLeitura = data;
-        call TarefaSensor_CalculaMedia.postTask(0);
+        call TarefaSensor_CalculaMedia.postTask(10);
     }
 
     /* Radio
@@ -93,7 +99,7 @@ implementation
 
     event void Control.startDone(error_t error)
     {
-        call TimerComunicacaoPC.startPeriodic(30000);
+        call TimerComunicacaoPC.startPeriodic(1000);
     }
 
     event void Control.stopDone(error_t error) {}

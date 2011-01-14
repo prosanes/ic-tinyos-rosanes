@@ -151,6 +151,7 @@ implementation
                 p_tail = NO_TASK;
             }
             p_next[id] = NO_TASK;
+            dbg("Prioridade_run", "Rodou PTask %i\n", (int) id);
             return id;
         }
         else

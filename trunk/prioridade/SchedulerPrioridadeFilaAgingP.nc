@@ -1,10 +1,6 @@
-/* Escalonador de prioridade
-    Utiliza uma heap como fila de prioridades
+#define NO_STARVATION_NUM 10
 
-    Autor: Pedro Rosanes
-*/
-
-//Descomentar para rodar no simulador
+//Define this to use on the TOSSIM
 //#define SIM__
 
 #include "hardware.h"
@@ -13,9 +9,8 @@
 #include <sim_event_queue.h>
 #endif
 
-#define NO_STARVATION_NUM 10
 
-module SchedulerPrioridadeHeapP {
+module SchedulerPrioridadeFilaAgingP {
     provides interface Scheduler;
     provides interface TaskBasic[uint8_t id];
     provides interface TaskPrioridade[uint8_t id];
@@ -26,22 +21,22 @@ implementation
     enum
     {
         NUM_TASKS = uniqueCount("TinySchedulerC.TaskBasic"),
-        NUM_MTASKS = uniqueCount("TinySchedulerC.TaskPrioridade"),
+        NUM_PTASKS = uniqueCount("TinySchedulerC.TaskPrioridade"),
         NO_TASK = 255,
     };
 
     volatile uint8_t m_head;
     volatile uint8_t m_tail;
     volatile uint8_t m_next[NUM_TASKS];
-    volatile uint8_t tamanho;
-    volatile uint8_t p_fila[NUM_MTASKS];
-    volatile uint8_t p_prioridade[NUM_MTASKS];
-    volatile uint8_t p_isDWaiting[NUM_MTASKS];
+    volatile uint8_t p_head;
+    volatile uint8_t p_tail;
+    volatile uint8_t p_next[NUM_PTASKS];
+    volatile uint8_t p_prioridade[NUM_PTASKS];
 
+    #ifdef SIM__
     // Aqui entram as funcoes responsaveis pelos eventos do simulador
     // As tasks são simuladas por eventos no TOSSIM
 
-    #ifdef SIM__
     bool sim_scheduler_event_pending = FALSE;
     sim_event_t sim_scheduler_event;
 
@@ -88,7 +83,6 @@ implementation
     }
     #endif
 
-
     // Helper functions (internal functions) intentionally do not have atomic
     // sections.  It is left as the duty of the exported interface functions to
     // manage atomicity to minimize chances for binary code bloat.
@@ -99,21 +93,21 @@ implementation
     inline uint8_t popMTask()
     {
         dbg("Prioridade", "Poped a Mtask (ou nao)\n");
-        if( m_head != NO_TASK )
-        {
-            uint8_t id = m_head;
-            m_head = m_next[m_head];
-            if( m_head == NO_TASK )
+            if( m_head != NO_TASK )
             {
-                m_tail = NO_TASK;
+                uint8_t id = m_head;
+                m_head = m_next[m_head];
+                if( m_head == NO_TASK )
+                {
+                    m_tail = NO_TASK;
+                }
+                m_next[id] = NO_TASK;
+                return id;
             }
-            m_next[id] = NO_TASK;
-            return id;
-        }
-        else
-        {
-            return NO_TASK;
-        }
+            else
+            {
+                return NO_TASK;
+            }
     }
 
     bool isMWaiting( uint8_t id )
@@ -147,84 +141,73 @@ implementation
 
     inline uint8_t popPTask()
     {
-        uint8_t id, i, menor, temp;
-
+        uint8_t atual;
         dbg("Prioridade", "Poped a Dtask (ou nao)\n");
-        //Se nao tem ninguem na fila
-        if (tamanho == 0)
-            return NO_TASK;
-
-        //Se tem alguem na fila
-        id = p_fila[0];
-
-        p_fila[0] = p_fila[tamanho-1];
-        p_prioridade[0] = p_prioridade[tamanho-1];
-        tamanho--;
-
-        i = 0;
-        while (i < tamanho)
+        if( p_head != NO_TASK )
         {
-            menor = i;
-            if (2*i+1 < tamanho && 
-                    p_prioridade[2*i+1] < p_prioridade[menor])
-                menor = 2*i+1;
-            if (2*i+2 < tamanho &&
-                    p_prioridade[2*i+2] < p_prioridade[menor])
-                menor = 2*i+2;
-
-            if (menor != i)
+            uint8_t id = p_head;
+            p_head = p_next[p_head];
+            if( p_head == NO_TASK )
             {
-                temp = p_fila[i];
-                p_fila[i] = p_fila[menor];
-                p_fila[menor] = temp;
-
-                temp = p_prioridade[i];
-                p_prioridade[i] = p_prioridade[menor];
-                p_prioridade[menor] = temp;
+                p_tail = NO_TASK;
             }
-            else
-                break;
-            i = menor;
-        }
-        
-        p_isDWaiting[id] = 0;
-        dbg("Prioridade_run", "Rodou PTask %i\n", (int) id);
-        return id;
+            p_next[id] = NO_TASK;
 
+            //antes de retornar, aumentar a prioridade de todas tarefas
+            atual = p_head;
+            while (atual != NO_TASK)
+            {
+                if (p_prioridade[atual] > 0)
+                    p_prioridade[atual]--;
+                atual = p_next[atual];
+            }
+
+            dbg("Prioridade_run", "Rodou PTask %i\n\tcom prioridade %i\n", (int) id, (int) p_prioridade[id]);
+            return id;
+        }
+        else
+        {
+            return NO_TASK;
+        }
+    }
+
+    bool isPWaiting( uint8_t id )
+    {
+        dbg("Prioridade", "isPWaiting: %d\n", (p_next[id] != NO_TASK) || (p_tail == id));
+        return (p_next[id] != NO_TASK) || (p_tail == id);
     }
 
     bool pushPTask( uint8_t id, uint8_t prioridade )
     {
-        int16_t temp, pai, filho;
-
         dbg("Prioridade", "pushPTask %i\n", (int)id);
-        if( !p_isDWaiting[id] )
+        if( !isPWaiting(id) )
         {
-            p_isDWaiting[id] = 1;
-
-            p_fila[tamanho] = id;
-            p_prioridade[tamanho] = prioridade;
-            pai = (tamanho - 1)/2;
-            filho = tamanho;
-            while (pai >= 0)
+            if( p_head == NO_TASK )
             {
-                if (p_prioridade[pai] > p_prioridade[filho])
-                {
-                    temp = p_fila[pai];
-                    p_fila[pai] = p_fila[filho];
-                    p_fila[filho] = temp;
-
-                    temp = p_prioridade[pai];
-                    p_prioridade[pai] = p_prioridade[filho];
-                    p_prioridade[filho] = temp;
-                }
-                else
-                   break;
-
-                filho = pai;
-                pai = (filho-1)/2;
+                p_head = id;
+                p_tail = id;
             }
-            tamanho++;
+            else
+            {
+                uint8_t t_curr = p_head;
+                uint8_t t_prev = p_head;
+                while (p_prioridade[t_curr] <= prioridade &&
+                        t_curr != NO_TASK) {
+                    t_prev = t_curr;
+                    t_curr = p_next[t_curr];
+                }
+                p_next[id] = t_curr;
+                if (t_curr == p_head) {
+                    p_head = id;
+                }
+                else {
+                    p_next[t_prev] = id;
+                    if (t_curr == NO_TASK) { 
+                        p_tail = id;
+                    }
+                }
+            }
+            p_prioridade[id] = prioridade;
             return TRUE;
         }
         else
@@ -242,11 +225,10 @@ implementation
             memset( (void *)m_next, NO_TASK, sizeof(m_next) );
             m_head = NO_TASK;
             m_tail = NO_TASK;
-            memset( (void *)p_fila, NO_TASK, sizeof(p_fila) );
-            memset( (void *)p_prioridade, NO_TASK, sizeof(p_prioridade) );
-            memset( (void *)p_isDWaiting, 0, sizeof(p_isDWaiting) );
-            tamanho = 0;
-
+            memset( (void *)p_next, NO_TASK, sizeof(p_next) );
+            p_head = NO_TASK;
+            p_tail = NO_TASK;
+            
             #ifdef SIM__
             sim_scheduler_event_pending = FALSE;
             sim_scheduler_event_init(&sim_scheduler_event);
@@ -292,7 +274,7 @@ implementation
             {
                 max_ptask = 0;
                 atomic {
-                    nextMTask = popMTask();
+                nextMTask = popMTask();
                 }
                 if (nextMTask != NO_TASK)
                     signal TaskBasic.runTask[nextMTask]();
@@ -305,7 +287,7 @@ implementation
                             (nextMTask = popMTask()) == NO_TASK)
                     {
                         call McuSleep.sleep();
-                    }
+                    }   
                 }
                 if (nextPTask != NO_TASK) {
                     dbg("Prioridade", "Running prioridade task %i\n", (int)nextPTask);
@@ -367,8 +349,6 @@ implementation
     default event void TaskPrioridade.runTask[uint8_t id]()
     {
     }
-
-
 
 }
 

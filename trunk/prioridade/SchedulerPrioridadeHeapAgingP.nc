@@ -15,7 +15,7 @@
 
 #define NO_STARVATION_NUM 10
 
-module SchedulerPrioridadeHeapP {
+module SchedulerPrioridadeHeapAgingP {
     provides interface Scheduler;
     provides interface TaskBasic[uint8_t id];
     provides interface TaskPrioridade[uint8_t id];
@@ -156,6 +156,7 @@ implementation
 
         //Se tem alguem na fila
         id = p_fila[0];
+        dbg("Prioridade_run", "Rodou PTask %i\n\tcom prioridade %i", (int) p_fila[0], (int) p_prioridade[0]);
 
         p_fila[0] = p_fila[tamanho-1];
         p_prioridade[0] = p_prioridade[tamanho-1];
@@ -188,7 +189,12 @@ implementation
         }
         
         p_isDWaiting[id] = 0;
-        dbg("Prioridade_run", "Rodou PTask %i\n", (int) id);
+
+        //Antes de retornar, aumenta a prioridade de todos que estao na fila.
+        for (i = 0; i < tamanho; i--)
+            if (p_prioridade[i] > 0)
+                p_prioridade[i]--;
+
         return id;
 
     }

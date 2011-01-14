@@ -6,7 +6,7 @@ configuration TinySchedulerC {
     provides interface TaskPrioridade[uint8_t id];
 }
 implementation {
-    components SchedulerPrioridadeFilaP as Sched;
+    components SchedulerPrioridadeHeapP as Sched;
     components McuSleepC as Sleep;
 
     Scheduler = Sched;

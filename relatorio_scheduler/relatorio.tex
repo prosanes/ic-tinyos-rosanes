@@ -176,6 +176,41 @@ E por ultimo, no \textit{Scheduler.postTask()}, caso a tarefa tenha sido colocad
 \begin{lstlisting}[frame=single]
   sim_scheduler_submit_event();
 \end{lstlisting}
+
+
+
+\section{Escalonador de Prioridades}\label{escalonadorprioridades}
+Com este escalonador é possível estabelecer prioridades às tarefas. A prioridade é passada como parâmetro através 
+do \textit{postTask}. Quanto menor o número passado, maior a preferência da tarefa. Sendo 0 a
+mais prioritária e 254 a menos prioritária.
+As \textit{Tasks} básicas também são aceitas, e são consideradas as tarefas com menor prioridade.
+
+Foram encontrados dois problemas de \textit{starvation}. O primeiro relacionado as tarefas básicas,
+onde elas só seriam atendidas caso não houvesse nenhuma tarefa com prioridade na fila. Para resolver isso, foi definido um
+limite máximo de tarefas prioritárias que podem ser atendidas em sequência. Caso esse limite seja excedido, uma tarefa
+básica é atendida. O segundo é relacionado as próprias tarefas com prioridade. Se entrar constantemente \textit{tasks} com alta
+prioridade, é possível que as de baixa prioridade não sejam atendidas. A solução se deu através do envelhecimento de
+tarefas. Ou seja, \textit{tasks} que ficam muito tempo na fila, têm sua importância aumentada.
+
+Dois tipos de estrutura de dados foram usadas para a organização das tarefas, uma fila comum e uma \textit{heap}. Com
+isso, totalizou-se quatro diferentes versões do escalonador:
+\begin{enumerate}
+    \item Fila comum sem envelhecimento
+    \item Fila comum com envelhecimento
+    \item Heap sem envelhecimento
+    \item Heap com envelhecimento
+\end{enumerate}
+A seguir uma tabela com a complexidade de inserção e remoção para cada escalonador:
+\begin{center}
+    \begin{tabular}{ | l | l | l | l | p{5cm} |}
+    \hline
+    Escalonador & Inserção & Remoção \\ \hline
+    Fila, sem envelhecimento & $\bigcirc(n)$ & $\bigcirc(1)$ \\ \hline 
+    Heap, sem envelhecimento & $\bigcirc(\log(n))$ & $\bigcirc(\log(n))$ \\ \hline
+    Fila, com envelhecimento & $\bigcirc(n)$ & $\bigcirc(n)$ \\ \hline
+    Heap, com envelhecimento & $\bigcirc(\log(n))$ & $\bigcirc(n)$ \\ \hline
+    \end{tabular}
+\end{center}
 \pagebreak
 
 \begin{thebibliography}{9}

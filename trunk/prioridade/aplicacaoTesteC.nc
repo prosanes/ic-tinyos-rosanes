@@ -4,15 +4,13 @@
  **/
 
 #include "MsgSerial.h"
+#include "Timer.h"
+#include "printf.h"
 
 module aplicacaoTesteC @safe()
 {
     uses interface Boot;
     uses interface Leds;
-    uses interface Packet;
-    uses interface AMSend;
-    uses interface SplitControl as Control;
-    uses interface TaskPrioridade as TarefaRadio_ComunicacaoPC;
     uses interface TaskPrioridade as Tarefa1;
     uses interface TaskPrioridade as Tarefa2;
     uses interface TaskPrioridade as Tarefa3;
@@ -33,19 +31,30 @@ module aplicacaoTesteC @safe()
     uses interface TaskPrioridade as Tarefa18;
     uses interface TaskPrioridade as Tarefa19;
     uses interface TaskPrioridade as Tarefa20;
+
+    uses interface Counter<TMicro, uint32_t> as Timer1;
 }
 implementation
 {
     /* Variaveis */
-    message_t pacotePC;
+    unsigned int t1;
+    bool over;
+
+    async event void Timer1.overflow()
+    {
+        over = TRUE;
+    }
 
     /* Boot
     */
     event void Boot.booted()
     {
-        //call Control.start();
-
-        call Tarefa1.postTask(20);
+        over = FALSE;
+        t1 = call Timer1.get();
+        printf("tempo inicial: %u\n", t1);
+        printfflush();
+        
+        call Tarefa1.postTask(102);
         call Tarefa2.postTask(20);
         call Tarefa3.postTask(20);
         call Tarefa4.postTask(20);
@@ -64,27 +73,11 @@ implementation
         call Tarefa17.postTask(20);
         call Tarefa18.postTask(20);
         call Tarefa19.postTask(20);
-        call Tarefa20.postTask(20);
+        call Tarefa20.postTask(100);
     }
 
     /* Tarefas
     */
-    event void TarefaRadio_ComunicacaoPC.runTask()
-    {
-        msgSerial_t* pacotePC_payload;
-        call Leds.led1Toggle();
-
-        //call comando de send para o PC
-        pacotePC_payload = (msgSerial_t*) call Packet.getPayload(&pacotePC, sizeof(msgSerial_t));
-        if (pacotePC_payload == NULL) 
-            {return;}
-        if (call Packet.maxPayloadLength() < sizeof(msgSerial_t)) 
-            {return;}
-
-        //pacotePC_payload->media = mediaLeitura;
-        call AMSend.send(AM_BROADCAST_ADDR,&pacotePC,sizeof(msgSerial_t));
-    }
-
     event void Tarefa1.runTask()
     {
         uint16_t i = 0;
@@ -93,7 +86,11 @@ implementation
         {
             k = k * 2;
         }
-
+        t1 = call Timer1.get();
+        printf("tempo final: %u\n", t1);
+        if (over == TRUE)
+            printf("OVERFLOW!!\n");
+        printfflush();
     }
     event void Tarefa2.runTask()
     {
@@ -266,15 +263,4 @@ implementation
             k = k * 2;
         }
     }
-
-    /* Radio
-    */
-    event void AMSend.sendDone(message_t* bufPtr, error_t error) {}
-
-    event void Control.startDone(error_t error)
-    {
-//        call TimerComunicacaoPC.startPeriodic(1000);
-    }
-
-    event void Control.stopDone(error_t error) {}
 }

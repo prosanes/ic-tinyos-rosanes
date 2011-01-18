@@ -5,6 +5,8 @@
  **/
 
 #include "MsgSerial.h"
+#include "Timer.h"
+#include "printf.h"
 
 configuration aplicacaoTesteAppC 
 {
@@ -12,16 +14,13 @@ configuration aplicacaoTesteAppC
 implementation
 {
   components MainC, aplicacaoTesteC, LedsC, TinySchedulerC;
-  components SerialActiveMessageC as SerialAM;
+  components CounterMicro32C as Timer1;
+
+  aplicacaoTesteC.Timer1 -> Timer1;
 
   aplicacaoTesteC-> MainC.Boot;
   aplicacaoTesteC.Leds -> LedsC;
-  aplicacaoTesteC.Packet -> SerialAM;
-  aplicacaoTesteC.AMSend -> SerialAM.AMSend[AM_SERIAL_MSG];
-  aplicacaoTesteC.Control -> SerialAM;
 
-  aplicacaoTesteC.TarefaRadio_ComunicacaoPC-> 
-  TinySchedulerC.TaskPrioridade[unique("TinySchedulerC.TaskPrioridade")]; 
   aplicacaoTesteC.Tarefa1->
   TinySchedulerC.TaskPrioridade[unique("TinySchedulerC.TaskPrioridade")];
   aplicacaoTesteC.Tarefa2->

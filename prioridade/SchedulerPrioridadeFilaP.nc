@@ -1,7 +1,7 @@
 #define NO_STARVATION_NUM 10
 
 //Define this to use on the TOSSIM
-#define SIM__
+//#define SIM__
 
 #include "hardware.h"
 

@@ -211,6 +211,19 @@ A seguir uma tabela com a complexidade de inserção e remoção para cada escal
     Heap, com envelhecimento & $\bigcirc(\log(n))$ & $\bigcirc(n)$ \\ \hline
     \end{tabular}
 \end{center}
+Para medir a complexidade na prática, foi desenvolvida uma aplicação de teste. Nela cada tarefa executa um loop de 65000
+iterações, fazendo uma simples multiplicação em cada iteração. O número de tarefas variou entre 20, 50 e 100.
+Na tabela a seguir pode-se ver o tempo de execução em microsegundos:
+\begin{center}
+    \begin{tabular}{ | l | l | l | l | p{5cm} |}
+    \hline
+    Escalonador              & 20 Tarefas & 50 Tarefas & 100 Tarefas \\ \hline
+    Fila, sem envelhecimento & 1733 & 4660 & 13721 \\ \hline 
+    Heap, sem envelhecimento & 2603 & 4308 & 7486 \\ \hline
+    Fila, com envelhecimento & 2278 & 7887 & 26066 \\ \hline
+    Heap, com envelhecimento & 2665 & 4510 & 7887 \\ \hline
+    \end{tabular}
+\end{center}
 \pagebreak
 
 \begin{thebibliography}{9}

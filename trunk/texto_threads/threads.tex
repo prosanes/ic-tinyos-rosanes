@@ -1,0 +1,93 @@
+
+\documentclass[a4paper,onecolumn, 10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[portuguese,brazil]{babel}
+\usepackage{ae}
+
+\usepackage[pdftex]{graphicx} % Exporta para pdf e aceita figuras
+%\usepackage{indentfirst} % Identa primeiro paragrafo
+\usepackage{textcomp}
+\usepackage[margin=30mm]{geometry}
+\usepackage[pdfauthor={Pedro Rosanes},% Insere metadados com o nome do autor
+	    pdftitle={TOSThreads},% Título que será mostrado na janela do PDF
+	    pdftex]{hyperref} % Usa hiperlinks no decorrer do texto
+\usepackage{color}
+\usepackage{listings} 
+%\lstset{language=C++}
+\lstset{ %
+    language=C++,                % choose the language of the code
+        basicstyle=\footnotesize,       % the size of the fonts that are used for the code
+        backgroundcolor=\color{white},  % choose the background color. You must add
+        showspaces=false,               % show spaces adding particular underscores
+        showstringspaces=false,         % underline spaces within strings
+        showtabs=false,                 % show tabs within strings adding particular underscores
+        frame=single,                   % adds a frame around the code
+        tabsize=2,                  % sets default tabsize to 2 spaces
+        captionpos=b,                   % sets the caption-position to bottom
+        breaklines=true,                % sets automatic line breaking
+        breakatwhitespace=false,        % sets if automatic breaks should only happen at whitespace
+        title=\lstname,                 % show the filename of files included with \lstinputlisting;
+    % also try caption instead of title
+        escapeinside={\%*}{*)},         % if you want to add a comment within your code
+        morekeywords={*,...}            % if you want to add more keywords to the set
+}
+
+%\parskip 7.2pt           % sets spacing between paragraphs
+\renewcommand{\baselinestretch}{1.5}
+
+\title{TOSThreads}
+\author{Pedro Rosanes}
+%\date{}
+
+\begin{document}
+
+\maketitle
+
+
+%\begin{titlepage}
+%\maketitle
+%\tableofcontents % Sumário
+%\end{titlepage}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%\section{Modelo}\label{modelo}
+\textit{TOSThreads} permite programação em thread no TinyOS, sem violar violar ou limitar o modelo de concorrência do
+sistema. O TinyOS executa em uma única thread, a nível de kernel enquanto a aplicação executa em uma ou mais threads, a nível de usuário.
+Em termos de escalonamento, o kernel tem prioridade máxima, ou seja, a aplicação só executa quando o núcleo do sistema
+está ocioso. Ele é responsável pelo escalonamento de tarefas e execução das chamadas de sistemas. 
+
+A interface entre as threads a nível de usuário e o kernel é feito através de chamadas de sistema bloqueantes. Essas
+chamadas são implementadas aproveitando os serviços já disponíveis do TinyOS. São responsáveis por manter o estado do serviço 
+\textit{split-phase} que será usado, bloquear a thread que a invocou e acordar a thread do kernel.
+
+Passam a existir três tipos de contextos de execução: tarefas, interrupções e threads. Tarefas e interrupções podem
+interromper threads de aplicação, mas não o contrário. Threads tem preempção entre elas, de modo que é necessário o uso de primitivas 
+de sincronização. As opções fornecidas são \textit{Mutex}, semáforos, barreiras, variáveis de condição, e contador
+bloqueante. Esta ultima foi desenvolvida especialmente para o TinyOS. Seu uso se dá de forma que a thread fica bloqueada
+até o contador atingir um número arbitrário, enquanto outras threads podem incrementar ou decrementar esta variável
+através de uma interface.
+
+O TinyOS retoma o controle sobre a aplicação de dois modos diferentes. No primeiro, uma aplicação faz uma chamada de
+sistema que posta uma tarefa para processar o serviço. No segundo modo, um manipulador de interrupção posta uma tarefa.
+Porém, neste caso o TinyOS só acorda depois de terminada a execução da interrupção.
+
+O escalonador de threads utiliza uma política \textit{Round-Robin} com um tempo de 5 milisegundos. É ele que oferece
+toda a interface para manipulação de threads, como pausar, criar e destruir. É interessante nota que o escalonador não
+existe em um contexto de execução específico, seu contexto depende de quem utilizou sua interface.
+
+As threads podem ser estáticas ou dinâmicas. A diferença é o momento de criação da pilha e do bloco de controle da
+thread. O primeiro tipo em tempo de compilação, o segundo em tempo de execução. O bloco de controle, também chamado de
+\textit{Thread Control Block} (TCB) contém informações essenciais da thread, como seu identificador, seu estado de
+execução, o valor dos registradores (para troca de contexto), entre outras.
+
+\pagebreak
+
+\begin{thebibliography}{9}
+\bibitem{tep134} P. Levis e C. Sharp. TEP 134: The TOSThreads Thread Library.
+                    \url{http://www.tinyos.net/tinyos-2.x/doc/html/tep106.html}
+\bibitem{TOSThreads} TOSThreads, TinyOS Tutorial. \url{http://docs.tinyos.net/index.php/Boot_Sequence}
+\end{thebibliography}
+
+\end{document}

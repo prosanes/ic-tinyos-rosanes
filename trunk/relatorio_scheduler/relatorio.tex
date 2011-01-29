@@ -63,6 +63,16 @@ além de um vetor de tamanho 255 (O que limita a quantidade máxima de tarefas).
 primeiro na fila. A célula cujo index corresponde ao \textit{id} do primeiro contém o \textit{id} do segundo, e assim em 
 diante. Chega-se ao fim da fila quando a célula contém um identificador de vázio.
 
+Para medir a complexidade na prática, foi desenvolvida uma aplicação de teste. Nela cada tarefa executa um loop de 65000
+iterações, fazendo uma simples multiplicação em cada iteração. O número de tarefas variou entre 20, 50 e 100.
+Na tabela a seguir pode-se ver o tempo de execução em microsegundos:
+\begin{center}
+    \begin{tabular}{ | l | l | l | l | p{5cm} |}
+    \hline
+    Escalonador              & 20 Tarefas & 50 Tarefas & 100 Tarefas \\ \hline
+    Escalonador Padrão       & 1366 & 1849 & 2652 \\ \hline 
+    \end{tabular}
+\end{center}
 %\includegraphics[scale=0.5]{fila.png}
 
 \section{Análise do Escalonador \textit{Earliest Deadline First}}\label{escalonadoredf}
@@ -218,6 +228,7 @@ Na tabela a seguir pode-se ver o tempo de execução em microsegundos:
     \begin{tabular}{ | l | l | l | l | p{5cm} |}
     \hline
     Escalonador              & 20 Tarefas & 50 Tarefas & 100 Tarefas \\ \hline
+    Escalonador Padrão       & 1366 & 1849 & 2652 \\ \hline 
     Fila, sem envelhecimento & 1733 & 4660 & 13721 \\ \hline 
     Heap, sem envelhecimento & 2603 & 4308 & 7486 \\ \hline
     Fila, com envelhecimento & 2278 & 7887 & 26066 \\ \hline

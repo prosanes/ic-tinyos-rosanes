@@ -37,17 +37,17 @@
 configuration TinySchedulerC {
   provides interface Scheduler;
   provides interface TaskBasic[uint8_t id];
-  provides interface TaskDeadline<T32khz>[uint8_t id];
+  provides interface TaskDeadline<TMicro>[uint8_t id];
 }
 implementation {
   components SchedulerDeadlineP as Sched;
   components McuSleepC as Sleep;
-  components Counter32khzC;
+  components CounterMicro32C;
   Scheduler = Sched;
   TaskBasic = Sched;
   TaskDeadline = Sched;
   Sched.McuSleep -> Sleep;
 
-  Sched.LocalTime -> Counter32khzC;
+  Sched.LocalTime -> CounterMicro32C;
 }
 

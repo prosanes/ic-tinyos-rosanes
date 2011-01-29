@@ -49,9 +49,9 @@
 module SchedulerDeadlineP {
     provides interface Scheduler;
     provides interface TaskBasic[uint8_t id];
-    provides interface TaskDeadline<T32khz>[uint8_t id];
+    provides interface TaskDeadline<TMicro>[uint8_t id];
     uses interface McuSleep;
-    uses interface LocalTime<T32khz>;
+    uses interface LocalTime<TMicro>;
 }
 implementation
 {

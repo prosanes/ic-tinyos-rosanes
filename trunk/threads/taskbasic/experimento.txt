@@ -1,0 +1,3 @@
+20 tarefas: 6000, variacao na ordem de 100 -> Variou mais
+50 tarefas: 6370, variacao na ordem de 100
+100 tarefas: 7300, variacao na ordem de 100

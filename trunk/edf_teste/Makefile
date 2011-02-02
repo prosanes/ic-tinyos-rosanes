@@ -1,3 +1,0 @@
-COMPONENT=edfAppC
-include $(MAKERULES)
-

@@ -12,7 +12,7 @@ configuration aplicacaoTesteAppC
 }
 implementation
 {
-  components MainC, aplicacaoTesteC, LedsC, TinySchedulerC;
+  components MainC, aplicacaoTesteC, LedsC;
   components CounterMicro32C as Timer1;
 
   aplicacaoTesteC.Timer1 -> Timer1;

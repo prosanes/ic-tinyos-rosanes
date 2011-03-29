@@ -1,0 +1,98 @@
+\documentclass[a4paper,onecolumn, 10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[portuguese,brazil]{babel}
+\usepackage{ae}
+
+\usepackage[pdftex]{graphicx} % Exposta para pdf e aceita figuras
+%\usepackage{indentfirst} % Identa primeiro paragrafo
+\usepackage{textcomp}
+\usepackage[margin=30mm]{geometry}
+\usepackage[pdfauthor={Pedro Rosanes},% Insere metadados com o nome do autor
+	    pdftitle={Abstrações de programação distribuída para redes de sensores sem fio},% Título que será mostrado na janela do PDF
+	    pdftex]{hyperref} % Usa hiperlinks no decorrer do texto
+
+%\parskip 7.2pt           % sets spacing between paragraphs
+\renewcommand{\baselinestretch}{1.5}
+
+\title{Abstrações de programação distribuída para redes de sensores sem fio}
+\author{Bolsista: Pedro Rosanes \and Orientador: Silvana Rossetto \and Departamento de Ciência da Computação}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+
+%\begin{titlepage}
+%\maketitle
+%\tableofcontents % Sumário
+%\end{titlepage}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Resumo}\label{resumo}
+Redes de Sensores Sem Fio (RSSFs) caracterizam-se pela formação de aglomerados de pequenos 
+dispositivos que, atuando em conjunto, permitem monitorar ambientes físicos ou processos de 
+produção com elevado grau de precisão. O desenvolvimento de aplicações que permitam explorar 
+o uso dessas redes requer o estudo e a experimentação de protocolos, algoritmos e modelos de 
+programação que se adequem às suas características e exigências particulares, entre elas, uso
+de recursos limitados, adaptação dinâmica das aplicações, e a necessidade de integração com
+outras redes, como a Internet. O objetivo deste projeto é criar abstrações de programação para
+o sistema operacional TinyOS (um dos principais sistemas operacionais usados na pesquisa com 
+RSSFs), visando facilitar a construção de abstrações de programação de nível mais alto que 
+auxiliem o desenvolvimento de aplicações nessa área.
+
+\section{Introdução}\label{intro}
+Sistemas projetados para os dispositivos que formam as redes de sensores devem lidar apropriadamente
+com as restrições e características particulares desses ambientes. A arquitetura adotada pelo TinyOS 
+(Hill/00) prioriza fortemente o tratamento dessas restrições em detrimento da simplicidade oferecida
+para o desenvolvimento de aplicações. Entretanto, de acordo com Levis e Culler (Levis/02), para que
+as redes de sensores sejam de fato adotadas é preciso que elas sejam mais fáceis de usar. A experiência
+de outros pesquisadores (Cheong/03, Han/05, Kasten/05, Dunkels/05), e a nossa experiência particular
+desenvolvendo componentes TinyOS (Costa/05), confirmam a importância de propor uma interface de programação
+mais adequada.\cite{tesesilvana}
+
+\section{Metodologia / Teoria}\label{metodologia}
+A seguir seguem, em ordem cronologica, os estudos e experimentos feitos.
+
+\subsection{Fundamentos das RSSFs com o TinyOS}
+Estudo feito sobre o sistema operacional TinyOS, sua linguagem de programação nesC e o simulador TOSSIM.
+Como fonte do aprendizado foram usados o minicurso desenvolvido pela professora Silvana Rosseto\cite{minicurso}, o material oferecido
+pela página do TinyOS\cite{siteTinyOS}, e o livro \textit{TinyOS Programming}, de Levis e Gay\cite{tinyosprogramming}.
+
+\subsection{Concorrência e Gerência de Tarefas em Sistemas Operacionais}
+Antes de estudar o modelo de concorrência e gerência de tarefas específica do TinyOS, foi feita uma revisão para
+sistemas operacionais em geral. O matérial utilizado foi o livro do professor Carlos Maziero (PUCPR)\cite{maziero}.
+
+\subsection{Concorrência e Gerência de Tarefas no TinyOS}
+********Texto desenvolvido******* \\
+********Escalonadores Desenvolvidos******** \\
+********Relatorio Técnico******* \\
+
+\subsection{Modelo de Threads do TinyOS}
+*******Estudo do modelo de Threads******** \\
+*******Texto desenvolvido (Atualizar ASM)******* \\
+*******Aplicacoes desenvolvidas****
+
+\subsection{Corotinas}
+*******Estudo sobre corotinas**** \\
+
+
+
+
+
+\pagebreak
+
+\begin{thebibliography}{99}
+
+\bibitem{minicurso} Minicurso sobre TinyOS, Silvana Rosseto,
+    \url{http://www.dcc.ufrj.br/~silvana/curso-tinyos-ufes2010/} 
+\bibitem{siteTinyOS} TinyOS Documentation Wiki, \url{http://docs.tinyos.net/index.php/Main_Page}
+\bibitem{tinyosprogramming} TinyOS Programming, Philip Levis, David Gay.
+\bibitem{maziero} Livro de Sistemas Operacionais, Carlos Maziero,
+    \url{http://www.ppgia.pucpr.br/~maziero/doku.php/so:livro_de_sistemas_operacionais}
+
+\end{thebibliography}
+
+\end{document}

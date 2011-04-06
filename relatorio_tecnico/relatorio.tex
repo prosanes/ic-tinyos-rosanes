@@ -8,28 +8,47 @@
 \usepackage{textcomp}
 \usepackage[margin=30mm]{geometry}
 \usepackage[pdfauthor={Pedro Rosanes},% Insere metadados com o nome do autor
-	    pdftitle={Abstrações de programação distribuída para redes de sensores sem fio},% Título que será mostrado na janela do PDF
+	    pdftitle={Extenção dos mecanismos de gerência de tarefas do sistema operacional TinyOS},% Título que será mostrado na janela do PDF
 	    pdftex]{hyperref} % Usa hiperlinks no decorrer do texto
 
 %\parskip 7.2pt           % sets spacing between paragraphs
 \renewcommand{\baselinestretch}{1.5}
 
-\title{Abstrações de programação distribuída para redes de sensores sem fio}
+\usepackage{color}
+\usepackage{listings}
+\lstset{ %
+language=C++,                % choose the language of the code
+basicstyle=\footnotesize,       % the size of the fonts that are used for the code
+backgroundcolor=\color{white},  % choose the background color. You must add
+showspaces=false,               % show spaces adding particular underscores
+showstringspaces=false,         % underline spaces within strings
+showtabs=false,                 % show tabs within strings adding particular underscores
+frame=single,                   % adds a frame around the code
+tabsize=2,                  % sets default tabsize to 2 spaces
+captionpos=b,                   % sets the caption-position to bottom
+breaklines=true,                % sets automatic line breaking
+breakatwhitespace=false,        % sets if automatic breaks should only happen at whitespace
+title=\lstname,                 % show the filename of files included with \lstinputlisting;
+% also try caption instead of title
+escapeinside={\%*}{*)},         % if you want to add a comment within your code
+morekeywords={*,...}            % if you want to add more keywords to the set
+}
+
+
+\title{Extenção dos mecanismos de gerência de tarefas do sistema operacional TinyOS}
 \author{Bolsista: Pedro Rosanes \and Orientador: Silvana Rossetto \and Departamento de Ciência da Computação}
 \date{}
 
 \begin{document}
 
+\begin{titlepage}
 \maketitle
 
+\tableofcontents
+\end{titlepage}
 
-%\begin{titlepage}
-%\maketitle
-%\tableofcontents % Sumário
-%\end{titlepage}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Resumo}\label{resumo}
 Redes de Sensores Sem Fio (RSSFs) caracterizam-se pela formação de aglomerados de pequenos 
@@ -38,23 +57,102 @@ produção com elevado grau de precisão. O desenvolvimento de aplicações que 
 o uso dessas redes requer o estudo e a experimentação de protocolos, algoritmos e modelos de 
 programação que se adequem às suas características e exigências particulares, entre elas, uso
 de recursos limitados, adaptação dinâmica das aplicações, e a necessidade de integração com
-outras redes, como a Internet. O objetivo deste projeto é criar abstrações de programação para
-o sistema operacional TinyOS (um dos principais sistemas operacionais usados na pesquisa com 
-RSSFs), visando facilitar a construção de abstrações de programação de nível mais alto que 
+outras redes, como a Internet.
+O sistema operacional mais usado nesses sensores é o TinyOS, um sistema leve, feito especialmente para consumir pouca
+energia, a característica mais importante para RSSFs. Sua programação é orientada a componentes para facilitar a
+reutilização de código, e a eventos para economizar memória. Isto cria um modelo de programação em duas fases, uma para envio
+do comando, e outra para espera da resposta (evento). O que causa a falta de um único fluxo de execução, levando a dificuldades no 
+desenvolvimento de aplicações. O objetivo deste projeto é criar abstrações de programação para
+o sistema operacional TinyOS, visando facilitar a construção de abstrações de programação distribuida de nível mais alto que 
 auxiliem o desenvolvimento de aplicações nessa área.
 
 \section{Introdução}\label{intro}
 Sistemas projetados para os dispositivos que formam as redes de sensores devem lidar apropriadamente
 com as restrições e características particulares desses ambientes. A arquitetura adotada pelo TinyOS 
-(Hill/00) prioriza fortemente o tratamento dessas restrições em detrimento da simplicidade oferecida
-para o desenvolvimento de aplicações. Entretanto, de acordo com Levis e Culler (Levis/02), para que
-as redes de sensores sejam de fato adotadas é preciso que elas sejam mais fáceis de usar. A experiência
-de outros pesquisadores (Cheong/03, Han/05, Kasten/05, Dunkels/05), e a nossa experiência particular
-desenvolvendo componentes TinyOS (Costa/05), confirmam a importância de propor uma interface de programação
-mais adequada.\cite{tesesilvana}
+prioriza fortemente o tratamento dessas restrições em detrimento da simplicidade oferecida
+para o desenvolvimento de aplicações. 
+A linguagem de programação usada é o nesC, uma adaptação de C que provê baixo consumo de memória, optimizações, e
+previne condições de corrida.
+Para lidar com as diversas operações de entrada e saída, o TinyOS utiliza um modelo de execução em duas fases, evitando
+bloqueios e consequentemente armazenamento de estados. A primeira fase da operação é um comando que pede ao hardware
+a execução de um serviço (ex.: sensoreamento). Este comando retorna imediatamente dando continuidade à execução. Quando o
+serviço é terminado, o hardware envia uma interrupção, sinalizada como um evento pelo TinyOS. Então, o seu tratador
+recebe as informações (ex.: valor sensoreado) e lida com elas conforme programado. O problema gerado por isso é a falta de um fluxo continuo de
+execução, na perspectiva do programador. *o* citar livro*
+O modelo de concorrência divide o código em dois tipos, assíncrono e síncrono. O ultimo é composto por código
+alcançável somente a partir de tarefas (\textit{tasks}) que são precedimentos adiados. Elas não podem se interromper, mas
+podem ser interrompidas por códigos assíncronos. O primeiro tipo é composto por código alcançável a partir de pelo menos
+um tratador de interrupção. Podem se interromper, e interromper códigos síncronos.
+As tarefas são todas escalonadas por um componente. Apesar da política de escalonamento ser do tipo \textit{First-in
+First-out}, este componente pode ser substituído para implementar outras políticas.
+De acordo com Levis e Culler *o* citar*, para que
+as redes de sensores sejam de fato adotadas é preciso que elas sejam mais fáceis de usar. 
+Portanto no TinyOS 2.1.X foi implementado um modelo de threads, permitindo um novo paradigma de programação a um custo de
+gerenciamento das threads. No nosso projeto, propomos novos escalonadores de tarefas e um novo modelo de programção
+baseado em corotinas, para diminuir os custos de gerenciamento.
 
-\section{Metodologia / Teoria}\label{metodologia}
-A seguir seguem, em ordem cronologica, os estudos e experimentos feitos.
+\section{Objetivos do projeto}\label{objetivos}
+Os principais objetivos do projeto são aprofundar o conhecimento sobre o modelo de concorrência do TinyOS, avaliar os
+novos componentes e a flexibilidade de alteração, introduzidos nas versão 2.1.X, incluindo a implementação de threads.
+Propor e desenvolver diferentes políticas de escalonamento de tarefas, além de implementar e avaliar um mecânismo de
+gerência cooperativa de tarefas via corotinas.
+
+%%%%%%%%%%%%%%%%%%%%%%%
+\pagebreak
+%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Metodologia}\label{metodologia}
+A seguir a metodologia usada.
+
+\subsection{Primeiro ciclo (out, nov)}
+\begin{itemize}
+  \item Estudar material introdutório sobre as ferramentas TinyOS, nesC e TOSSIM.
+  \item Instalar as ferramentas e experimentá-las em aplicações básicas.
+  \item Estudar/revisar conceitos fundamentais sobre concorrência e gerência de tarefas em sistemas operacionais.
+\end{itemize}
+
+\subsection{Segundo ciclo (nov, dez, jan)}
+\begin{itemize}
+  \item Estudar o modelo de concorrência e os mecanismos de gerência de tarefas do TinyOS.
+  \item Redigir texto sobre o modelo de concorrência e os mecanismos de gerência de
+  tarefas do TinyOS.
+  \item Projetar, implementar e avaliar outros componentes básicos de escalonamento de
+  tarefas para o TinyOS.
+  \item Redigir relatório técnico sobre os componentes de escalonamento desenvolvidos.
+  \item Estudar o modelo de threads do TinyOS.
+  \item Implementar aplicações básicas usando o modelo de threads do TinyOS.
+  \item Redigir texto sobre o modelo de threads do TinyOS.
+\end{itemize}
+
+\subsection{Terceiro ciclo (fev, mar, abr, mai)}
+\begin{itemize}
+  \item Estudar o conceito de co-rotinas (mecanismo de gerência cooperativa de tarefas)
+  \item Pensar e elaborar proposta de extensão do modelo de concorrência do TinyOS e
+  dos seus mecanismos de gerência de tarefas.
+  \item Descrever resumidamente a proposta
+  \item Projetar a solução e os experimentos que deverão ser realizados.
+  \item Descrever o projeto e modelagem da solução e dos experimentos
+  \item Implementar a solução.
+  \item Executar os experimentos e avaliar os resultados.
+  \item Redigir texto com proposta, projeto, modelagem, implementação e experiemntos
+  realizados.
+\end{itemize}
+
+\subsection{Quarto ciclo (mai, jun, jul, ago)}
+\begin{itemize}
+  \item Avaliar os resultados obtidos e refinar a proposta de solução.
+  \item Propor trabalhos futuros.
+  \item Redigir relatório final sobre a Iniciação Científica: atividades realizadas, conheci-
+  mentos adquiridos, dificuldades encontradas.
+  \item Redigir artigo completo.
+\end{itemize}
+
+%%%%%%%%%%%
+\pagebreak
+%%%%%%%%%%%
+
+\section{Teoria}\label{teoria}
+A seguir os estudos feitos.
 
 \subsection{Fundamentos das RSSFs com o TinyOS}
 Estudo feito sobre o sistema operacional TinyOS, sua linguagem de programação nesC e o simulador TOSSIM.
@@ -66,21 +164,381 @@ Antes de estudar o modelo de concorrência e gerência de tarefas específica do
 sistemas operacionais em geral. O matérial utilizado foi o livro do professor Carlos Maziero (PUCPR)\cite{maziero}.
 
 \subsection{Concorrência e Gerência de Tarefas no TinyOS}
-********Texto desenvolvido******* \\
-********Escalonadores Desenvolvidos******** \\
-********Relatorio Técnico******* \\
+Neste momento foram estudados o modelo de concorrência e os mecanismos de gerência de tarefas específicos do TinyOS
+como a sequência de inicialização dos sensores, e o escalonador padrão.\cite{anexo1concorrenciatinyos}
+
+\subsubsection{Sequência de Inicialização}
+*o*citar TEP*
+O principal componente do TinyOS responsável por botar o sistema no ar é o \textit{MainC}. Para isso, ele
+inicializa o escalonador de tarefas, os componentes de hardware e software. Primeiro é configurado
+o sistema de memória e escolhido o modo de processamento. Com esses pré-requisitos básicos
+estabelecidos é inicializado o escalonador, para permitir que as proximas etapas possam postar
+tarefas.
+
+O segundo passo é inicializar o hardware como um todo, permitindo a operabilidade da plataforma.
+Alguns exemplos são configuração de pinos de entrada e saida, calibração do clock e dos LEDs.
+Como esta etapa exige códigos específicos para cada tipo de plataforma, o MainC se liga ao componente
+\textit{PlataformC} que implementa o programa necessário.
+
+O terceiro passo trata o software. Além de configurar os aplicativos básicos do sistema, como
+o temporizador, também é preciso inicializar os programas do usuário. Portanto, se um componente 
+do usuário precisa ser inicializado basta amarrá-lo ao SoftwareInit. Assim o TinyOS se
+responsabiliza por executar este código.
+Por ultimo, quando tudo é concluido, o MainC sinaliza que a inicialização concluiu, através do
+sinal \textit{Boot.booted()}. Isso permite que os componentes rodem. E finalmente, o TinyOS entra no
+seu laço principal, no qual o escalonador espera por tarefas, e as executa. E importante notar que
+durante todo este processo, as interrupções do sistema ficam desabilitadas.
+
+\subsubsection{Mecânismos de Gerência de Tarefas}
+Tasks, ou tarefas, têm duas propriedades importantes. Elas não são preemptivas entre si, e são
+executadas de forma adiada. Isso significa que ao postar uma tarefa, o fluxo de execução continua,
+sem desvio, e ela só será processada depois. As tasks básicas não tem parâmetro, apesar de
+ser possível fazê-las receber parâmetros, criando uma interface e amarrando-a ao componente do
+escalonador.
+
+O responsável por gerenciar e escalonar tarefas no TinyOS é o componente TinySchedulerC.
+O escalonador padrão adota uma política First-in First-out para agendar as tarefas. Ele também
+cuida de parte do gerenciamento de energia, pois bota a CPU em um estado de baixo consumo se
+não há nada para ser executado.
+
+É possível mudar a política de gerenciamento de tarefas substituindo o escalonador padrão.
+Para isto, basta adicionar uma configuração com o nome TinySchedulerC no diretório da aplicação
+e amarrá-la ao componente responsável pela implementação. Qualquer novo escalonador tem de
+aceitar a interface das tasks padrões, e garantir a execução de todas as tarefas, sem permitir
+Starvation
+
+\subsubsection{Modelo de Concorrência}
+O TinyOS mantém os problemas de concorrência bem simples, qualquer possível condiçõo de
+corrida é detectada em tempo de compilação. Para que isso seja possível, o código em nesC é dividido em dois tipos:
+\begin{description}
+    \item[Código Assíncrono] Código alcançável a partir de pelo menos um tratador de interrupção.
+    \item[Código Síncrono] Código alcançável somente a partir de tasks.
+\end{description}
+
+Eventos e comandos que podem ser sinalizados ou chamados a partir de um trador de interrupção são códigos assíncronos.
+Eles podem interromper outros eventos, comandos e \textit{tasks}. Por isso devem ser marcados como \textit{async} no
+código fonte. O problema aparece quando variáveis compartilhadas são acessadas por esse tipo de código. Para contornar
+isso, deve-se usar o comando \textit{atomic} ou \textit{Power locks}.
+
+O comando \textit{atomic} permite que um trecho de instruções possa ser executado sem ser interrompido. Dois fatos
+importantes surgem com o seu uso, primeiro a ativação e desativação de interrupções consome ciclos de CPU. Segundo,
+longos trechos atômicos podem atrasar outras interrupções, portanto é preciso tomar cuidado ao chamar outros componentes
+a partir desses blocos.
+
+Algumas vezes é preciso usar um certo hardware por um longo tempo, sem compartilhá-lo. Como a necessidade de atomicidade
+não está no processador e sim no hardware, pode-se conceder sua exclusividade a somente um 'usuário' através de
+\textit{Power locks}. Para isso, primeiro é feito um pedido através de um comando, depois quando o recurso desejado
+estiver disponível, um evento é sinalizado. Assim não há bloqueio de execução, como em semáforos. Existe a possibilidade
+de requisição imediata. Nesse caso nenhum evento será sinalizado: se o recurso não estiver protegido, ele será
+imediatamente cedido, caso contrário, o comando retornará falso. \textit{Power Locks} têm três sub-componentes: Um
+abitrador que gerência as prioridades dos pedidos, um gerênciador de energia e um configurador que ajusta o hardware de
+acordo com o cliente.
+
+\subsection{Componentes de Escalonamento}
+Neste momento foram análisados e desenvolvidos diversos gerênciadores de tarefas.
+
+\subsubsection{Análise do Escalonador Padrão}
+
+O escalonador padrão adota uma política FIFO. A estrutura de dados utilizada é uma lista encadeada.
+Ele provê as interfaces \textit{Scheduler} e \textit{TaskBasic}.
+As tarefas se conectam ao escalonador através da \textit{TaskBasic}. Ao compilar um programa em NesC, todas tarefas
+básicas viram uma interface desse tipo. Porém, para se diferenciarem é criado um parâmetro na interface
+\footnote{Para mais informações sobre interfaces parametrizadas olhar o livro TinyOS Programming\cite[s. 8.3 e 9]{tinyosprogramming}.}.
+
+\subsubsection{Análise do Escalonador \textit{Earliest Deadline First}}\label{escalonadoredf}
+
+Este escalonador *o*citar de onde surgiu esse escalonador* aceita tarefas com deadline e 
+elege as que tem menor \textit{deadline} para executar. A interface usada para criar
+esse tipo de tarefas é \textit{TaskDeadline}. O \textit{deadline} é passado por parâmetro pela função \textit{postTask}.
+As \textit{TaskBasic} também são aceitas como recomendado pelo TEP
+106\cite{tep106}.
+
+Em contraste, o escalonador não segue outra recomendação: não elimina a possibilidade de \textit{starvation} pois as tarefas
+básicas só são atendidas quando não há nenhuma com \textit{deadline} esperando para executar. A fila de prioridades é
+implementada da mesma forma que a do escalonador padrão\ref{escalonadorpadrao}, a única mudança está na inserção. Para
+inserir, a fila é percorrida do começo até o fim, procurando-se o local exato de inserção.
+Por tanto o custo de inserir é $\bigcirc(n)$, e o custo de retirar da fila é $\bigcirc(1)$. 
+Uma possível modificação seria utilizar uma \textit{heap}. Mudando o custo de inserção e de retirada para $\bigcirc(\log
+n)$.
+
+A princípio tive problemas com o componente \textit{Counter32khzC}, 
+pois ele não existe para o \textit{micaz}. Para poder compilar o
+escalonador tive de tirá-lo. Ele era usado para calcular a hora atual, e somar ao deadline. Sem esse componente, temos
+um escalonador de prioridades (mínimo). 
+
+\subsubsection{Configuração de um Escalonador não Padrão}
+Para substituir o escalonador padrão é preciso colocar uma configuração com o nome \textit{TinySchedulerC} no diretório
+da aplicação. Dentro desta configuração, amarra-se a interface \textit{Scheduler} a implementação do escalonador. Por
+exemplo:
+\begin{lstlisting}
+configuration TinySchedulerC 
+{
+    provides interface Scheduler;
+    ...
+}
+implementation 
+{
+    components SchedulerDeadlineP;
+    ...
+
+    Scheduler = SchedulerDeadlineP;
+    ...
+}
+\end{lstlisting}
+
+É preciso também criar a interface para o novo tipo de tarefa, com o comando \textit{postTask} e o evento
+\textit{runTask}. Por exemplo:
+\begin{lstlisting}
+interface TaskDeadline<precision_tag> { 
+    async command error_t postTask(uint32_t deadline);
+    event void runTask();
+}
+\end{lstlisting}
+
+Por ultimo, deve-se amarrar a interface da tarefa a do escalonador. Por exemplo:
+\begin{lstlisting}
+configuration TinySchedulerC 
+{
+    provides interface Scheduler;
+    provides interface TaskBasic[uint8_t id];
+    provides interface TaskDeadline<TMilli>[uint8_t id];
+}
+implementation 
+{
+    components SchedulerDeadlineP;
+    ...
+
+    Scheduler = SchedulerDeadlineP;
+    TaskBasic = Sched;
+    TaskDeadline = Sched;
+}
+\end{lstlisting}
+
+Para que o escalonador funcione corretamente no simulador é preciso adicionar funções que lidam com eventos no
+\textit{tossim}. Essas funções foram retiradas do arquivo
+\textit{opt/tinyos-2.1.1/tos/lib/tossim/SimSchedulerBasicP.nc}.
+Primeiro é preciso adicionar ao \textit{Scheduler}:
+\begin{lstlisting}[frame=single]
+  bool sim_scheduler_event_pending = FALSE;
+  sim_event_t sim_scheduler_event;
+
+  int sim_config_task_latency() {return 100;}
+  
+  void sim_scheduler_submit_event() {
+    if (sim_scheduler_event_pending == FALSE) {
+      sim_scheduler_event.time = sim_time() + sim_config_task_latency();
+      sim_queue_insert(&sim_scheduler_event);
+      sim_scheduler_event_pending = TRUE;
+    }
+  }
+
+  void sim_scheduler_event_handle(sim_event_t* e) {
+    sim_scheduler_event_pending = FALSE;
+    if (call Scheduler.runNextTask()) {
+      sim_scheduler_submit_event();
+    }
+  }
+
+  void sim_scheduler_event_init(sim_event_t* e) {
+    e->mote = sim_node();
+    e->force = 0;
+    e->data = NULL;
+    e->handle = sim_scheduler_event_handle;
+    e->cleanup = sim_queue_cleanup_none;
+  }
+\end{lstlisting}
+Depois, no \textit{Scheduler.init()} adicione:
+\begin{lstlisting}[frame=single]
+  sim_scheduler_event_pending = FALSE;
+  sim_scheduler_event_init(&sim_scheduler_event);
+\end{lstlisting}
+E por ultimo, no \textit{Scheduler.postTask()}, caso a tarefa tenha sido colocada na fila, adicione:
+\begin{lstlisting}[frame=single]
+  sim_scheduler_submit_event();
+\end{lstlisting}
+
+\subsubsection{Escalonador de Prioridades}\label{escalonadorprioridades}
+Desenvolvemos um escalonador onde é possível estabelecer prioridades às tarefas. A prioridade é passada como parâmetro através 
+do \textit{postTask}. Quanto menor o número passado, maior a preferência da tarefa. Sendo 0 a
+mais prioritária e 254 a menos prioritária.
+As \textit{Tasks} básicas também são aceitas, e são consideradas as tarefas com menor prioridade.
+
+Foram encontrados dois problemas de \textit{starvation}. O primeiro relacionado as tarefas básicas,
+onde elas só seriam atendidas caso não houvesse nenhuma tarefa com prioridade na fila. Para resolver isso, foi definido um
+limite máximo de tarefas prioritárias que podem ser atendidas em sequência. Caso esse limite seja excedido, uma tarefa
+básica é atendida. O segundo é relacionado às próprias tarefas com prioridade. Se entrar constantemente \textit{tasks} com alta
+prioridade, é possível que as de baixa prioridade não sejam atendidas. A solução se deu através do envelhecimento de
+tarefas. Ou seja, \textit{tasks} que ficam muito tempo na fila, têm sua importância aumentada.
+
+Dois tipos de estrutura de dados foram usadas para a organização das tarefas, uma fila comum e uma \textit{heap}. Com
+isso, totalizou-se quatro diferentes versões do escalonador:
+\begin{enumerate}
+    \item Fila comum sem envelhecimento
+    \item Fila comum com envelhecimento
+    \item Heap sem envelhecimento
+    \item Heap com envelhecimento
+\end{enumerate}
+A seguir uma tabela com a complexidade de inserção e remoção para cada escalonador:
+\begin{center}
+    \begin{tabular}{ | l | l | l | l | p{5cm} |}
+    \hline
+    Escalonador & Inserção & Remoção \\ \hline
+    Fila, sem envelhecimento & $\bigcirc(n)$ & $\bigcirc(1)$ \\ \hline 
+    Heap, sem envelhecimento & $\bigcirc(\log(n))$ & $\bigcirc(\log(n))$ \\ \hline
+    Fila, com envelhecimento & $\bigcirc(n)$ & $\bigcirc(n)$ \\ \hline
+    Heap, com envelhecimento & $\bigcirc(\log(n))$ & $\bigcirc(n)$ \\ \hline
+    \end{tabular}
+\end{center}
+
+\subsubsection{Escalonador multi-nível}
+No TinyOS, percebe-se uma divisão clara dos tipos de serviços: 
+\begin{description}
+    \item[Rádio] Comunicação sem fio entre diferentes nós da rede através de ondas de rádio.
+    \item[Sensor] Sensoriamento de diferentes características do ambiente.
+    \item[Serial] Comunicação por fio entre um nó e uma estação base (PC).
+    \item[Básica] Outros serviços, como por exemplo temporizador.
+\end{description}
+Portanto desenvolvemos um escalonador que divide as tarefas de acordo com os tipos definidos acima.
+Cada tipo de tarefa tem sua própria fila com política \textit{First-in First-out}, e as filas mais importantes devem ser
+atendidas por completo para que as outras sejam antendidas.
+Definiu-se que a ordem de prioridade seria serial, radio, sensor e por ultimo básica.
 
 \subsection{Modelo de Threads do TinyOS}
-*******Estudo do modelo de Threads******** \\
-*******Texto desenvolvido (Atualizar ASM)******* \\
-*******Aplicacoes desenvolvidas****
+Por ser uma abstração de programação já implementada no TinyOS (opcional), foi feito um estudo neste modelo.
+Os conceitos já utilizados/implementados por threads que ajudarão na criação de uma interface do corotinas são: 
+Chamadas bloqueantes ao sistema, re-aproveitamento dos serviçõs oferecidos, bloco de controle de threads (TCB), e
+a da troca de contexto.
+
+\textit{TOSThreads} permite programação em thread no TinyOS, sem violar violar ou limitar o modelo de concorrência do
+sistema. O TinyOS executa em uma única thread, a nível de kernel enquanto a aplicação executa em uma ou mais threads, a nível de usuário.
+Em termos de escalonamento, o kernel tem prioridade máxima, ou seja, a aplicação só executa quando o núcleo do sistema
+está ocioso. Ele é responsável pelo escalonamento de tarefas e execução das chamadas de sistemas. 
+
+A interface entre as threads a nível de usuário e o kernel é feito através de chamadas de sistema bloqueantes. Essas
+chamadas são implementadas aproveitando os serviços já disponíveis do TinyOS. São responsáveis por manter o estado do serviço 
+\textit{split-phase} que será usado, bloquear a thread que a invocou e acordar a thread do kernel.
+
+Passam a existir três tipos de contextos de execução: tarefas, interrupções e threads. Tarefas e interrupções podem
+interromper threads de aplicação, mas não o contrário. Threads tem preempção entre elas, de modo que é necessário o uso de primitivas 
+de sincronização. As opções fornecidas são \textit{Mutex}, semáforos, barreiras, variáveis de condição, e contador
+bloqueante. Esta ultima foi desenvolvida especialmente para o TinyOS. Seu uso se dá de forma que a thread fica bloqueada
+até o contador atingir um número arbitrário, enquanto outras threads podem incrementar ou decrementar esta variável
+através de uma interface.
+
+O TinyOS retoma o controle sobre a aplicação de dois modos diferentes. No primeiro, uma aplicação faz uma chamada de
+sistema que posta uma tarefa para processar o serviço. No segundo modo, um manipulador de interrupção posta uma tarefa.
+Porém, neste caso o TinyOS só acorda depois de terminada a execução da interrupção.
+
+O escalonador de threads utiliza uma política \textit{Round-Robin} com um tempo de 5 milisegundos. É ele que oferece
+toda a interface para manipulação de threads, como pausar, criar e destruir. É interessante nota que o escalonador não
+existe em um contexto de execução específico, seu contexto depende de quem utilizou sua interface.
+
+As threads podem ser estáticas ou dinâmicas. A diferença é o momento de criação da pilha e do bloco de controle da
+thread. O primeiro tipo em tempo de compilação, o segundo em tempo de execução. O bloco de controle, também chamado de
+\textit{Thread Control Block} (TCB) contém informações essenciais da thread, como seu identificador, seu estado de
+execução, o valor dos registradores (para troca de contexto), entre outras.
+
+A troca de contexto é feita por códigos específicos para cada plataforma. É utilizada a linguagem assembly junto com C,
+para armazenar o valor dos registradores importantes na TCB. Exemplo do código utilizado para o chip \textit{atm218}:
+
+\begin{lstlisting}
+//Define on platform specific basis for inclusion in
+// the thread control block
+typedef struct thread_regs {
+    uint8_t status;
+    uint8_t r0;
+    uint8_t r1;
+    uint8_t r2;
+    ...
+}
+
+//Save General Purpose Registers
+#define SAVE_GPR(t)                                     \
+  __asm__("mov %0,r0 \n\t" : "=r" ((t)->regs.r0) : );   \
+  __asm__("mov %0,r1 \n\t" : "=r" ((t)->regs.r1) : );   \
+  __asm__("mov %0,r2 \n\t" : "=r" ((t)->regs.r2) : );   \
+
+
+\end{lstlisting}
 
 \subsection{Corotinas}
-*******Estudo sobre corotinas**** \\
+Primeiramente foram revisados conceitos de corotinas em sistemas operacionais. Depois foi feita uma análise na
+implementação de corotinas para a antiga versão do TinyOS (1.0), feita por Silvana Rosseto em sua tese de
+doutorado\cite{tesesilvana}.
 
+%%%%%%%%%%
+\pagebreak
+%%%%%%%%%%
 
+\section{Resultados Obtidos}\label{resultados}
+Seguem os experimentos e seus respectivos resultados.
 
+\subsection{Experimentos com o Escalonador Padrão}
+Antes de começar a desenvolver outros escalonadores de tarefas, foi feito um experimento com o padrão que utiliza uma
+política \textit{First in, First Out}.
+Para medir a complexidade na prática, foi desenvolvida uma aplicação de teste. Nela cada tarefa executa um loop de 65000
+iterações, fazendo uma simples multiplicação em cada iteração. O número de tarefas variou entre 20, 50 e 100.
+Na tabela a seguir pode-se ver o tempo de execução em microsegundos:
+\begin{center}
+    \begin{tabular}{ | l | l | l | l | p{5cm} |}
+    \hline
+    Escalonador              & 20 Tarefas & 50 Tarefas & 100 Tarefas \\ \hline
+    Escalonador Padrão       & 1366 & 1849 & 2652 \\ \hline
+    \end{tabular}
+\end{center}
 
+\subsection{Experimentos com o Escalonador de Prioridades}
+O novo escalonador desenvolvido utiliza uma política de prioridade. Foram encontrados dois problemas de
+\textit{starvation}. O primeiro relacionado as tarefas básicas, onde elas só seriam atendidas caso não houvesse 
+nenhuma tarefa com prioridade na fila. Para resolver isso, foi definido um limite máximo de tarefas prioritárias 
+que podem ser atendidas em sequência. Caso esse limite seja excedido, uma tarefa básica é atendida. O segundo é 
+relacionado às próprias tarefas com prioridade. Se entrar constantemente \textit{tasks} com alta prioridade, é 
+possível que as de baixa prioridade não sejam atendidas. A solução se deu através do envelhecimento de
+tarefas. Ou seja, \textit{tasks} que ficam muito tempo na fila, têm sua importância aumentada.
+
+Dois tipos de estrutura de dados foram usadas para a organização das tarefas, uma fila comum e uma \textit{heap}. E devido
+aos problemas de \textit{starvation} como visto acima\ref{escalonadorprioridade}, foram criadas políticas de
+envelhecimento. 
+
+Com isso, totalizou-se quatro diferentes versões do escalonador:
+\begin{enumerate}
+    \item Fila comum sem envelhecimento
+    \item Fila comum com envelhecimento
+    \item Heap sem envelhecimento
+    \item Heap com envelhecimento
+\end{enumerate}
+Analisando as estruturas de dados usadas em cada escalonador, criamos uma tabela com a complexidade de inserção e
+remoção para cada um:
+\begin{center}
+    \begin{tabular}{ | l | l | l | l | p{5cm} |}
+    \hline
+    Escalonador & Inserção & Remoção \\ \hline
+    Fila, sem envelhecimento & $\bigcirc(n)$ & $\bigcirc(1)$ \\ \hline 
+    Heap, sem envelhecimento & $\bigcirc(\log(n))$ & $\bigcirc(\log(n))$ \\ \hline
+    Fila, com envelhecimento & $\bigcirc(n)$ & $\bigcirc(n)$ \\ \hline
+    Heap, com envelhecimento & $\bigcirc(\log(n))$ & $\bigcirc(n)$ \\ \hline
+    \end{tabular}
+\end{center}
+Para medir a complexidade na prática, foi desenvolvida uma aplicação de teste. Nela cada tarefa executa um loop de 65000
+iterações, fazendo uma simples multiplicação em cada iteração. O número de tarefas variou entre 20, 50 e 100.
+Na tabela a seguir pode-se ver o tempo de execução em microsegundos:
+\begin{center}
+    \begin{tabular}{ | l | l | l | l | p{5cm} |}
+    \hline
+    Escalonador              & 20 Tarefas & 50 Tarefas & 100 Tarefas \\ \hline
+    Escalonador Padrão       & 1366 & 1849 & 2652 \\ \hline 
+    Fila, sem envelhecimento & 1733 & 4660 & 13721 \\ \hline 
+    Heap, sem envelhecimento & 2603 & 4308 & 7486 \\ \hline
+    Fila, com envelhecimento & 2278 & 7887 & 26066 \\ \hline
+    Heap, com envelhecimento & 2665 & 4510 & 7887 \\ \hline
+    \end{tabular}
+\end{center}
+O que pode-se perceber é que para um número pequeno de tarefas a fila é mais eficiente que a heap. Isso acontece pois
+não é compensado o \textit{overhead} do algoritmo da heap.
+
+\section{Conclusões}\label{conclusoes}
+
+\section{Relatório de Atividades}
 
 \pagebreak
 
@@ -92,6 +550,7 @@ sistemas operacionais em geral. O matérial utilizado foi o livro do professor C
 \bibitem{tinyosprogramming} TinyOS Programming, Philip Levis, David Gay.
 \bibitem{maziero} Livro de Sistemas Operacionais, Carlos Maziero,
     \url{http://www.ppgia.pucpr.br/~maziero/doku.php/so:livro_de_sistemas_operacionais}
+\bibitem{tesesilvana} Citar tese de doutorado!*******************
 
 \end{thebibliography}
 

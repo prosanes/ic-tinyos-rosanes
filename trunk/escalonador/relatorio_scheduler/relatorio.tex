@@ -53,15 +53,11 @@
 
 \section{Análise do Escalonador Padrão}\label{escalonadorpadrao}
 
-O escalonador padrão adota uma política FIFO. Ele provê as interfaces \textit{Scheduler} e \textit{TaskBasic}.
+O escalonador padrão adota uma política FIFO. A estrutura de dados utilizada é uma lista encadeada.
+Ele provê as interfaces \textit{Scheduler} e \textit{TaskBasic}.
 As tarefas se conectam ao escalonador através da \textit{TaskBasic}. Ao compilar um programa em NesC, todas tarefas
 básicas viram uma interface desse tipo. Porém, para se diferenciarem é criado um parâmetro na interface
 \footnote{Para mais informações sobre interfaces parametrizadas olhar o livro TinyOS Programming\cite[s. 8.3 e 9]{tinyosprogramming}.}.
-
-A fila implementada \textbf{não} funciona como um vetor circular. Existe um 'ponteiro' para a cabeça e um para o rabo,
-além de um vetor de tamanho 255 (O que limita a quantidade máxima de tarefas). A cabeça contém o identificador do 
-primeiro na fila. A célula cujo index corresponde ao \textit{id} do primeiro contém o \textit{id} do segundo, e assim em 
-diante. Chega-se ao fim da fila quando a célula contém um identificador de vázio.
 
 Para medir a complexidade na prática, foi desenvolvida uma aplicação de teste. Nela cada tarefa executa um loop de 65000
 iterações, fazendo uma simples multiplicação em cada iteração. O número de tarefas variou entre 20, 50 e 100.
@@ -91,7 +87,7 @@ Uma possível modificação seria utilizar uma \textit{heap}. Mudando o custo de
 n)$.
 
 A princípio tive problemas com o componente \textit{Counter32khzC}, 
-pois ele não existe para o \textit{micaz} na simulação. Para poder compilar o
+pois ele não existe para o \textit{micaz}. Para poder compilar o
 escalonador tive de tirá-lo. Ele era usado para calcular a hora atual, e somar ao deadline. Sem esse componente, temos
 um escalonador de prioridades (mínimo). 
 
@@ -198,7 +194,7 @@ As \textit{Tasks} básicas também são aceitas, e são consideradas as tarefas 
 Foram encontrados dois problemas de \textit{starvation}. O primeiro relacionado as tarefas básicas,
 onde elas só seriam atendidas caso não houvesse nenhuma tarefa com prioridade na fila. Para resolver isso, foi definido um
 limite máximo de tarefas prioritárias que podem ser atendidas em sequência. Caso esse limite seja excedido, uma tarefa
-básica é atendida. O segundo é relacionado as próprias tarefas com prioridade. Se entrar constantemente \textit{tasks} com alta
+básica é atendida. O segundo é relacionado às próprias tarefas com prioridade. Se entrar constantemente \textit{tasks} com alta
 prioridade, é possível que as de baixa prioridade não sejam atendidas. A solução se deu através do envelhecimento de
 tarefas. Ou seja, \textit{tasks} que ficam muito tempo na fila, têm sua importância aumentada.
 

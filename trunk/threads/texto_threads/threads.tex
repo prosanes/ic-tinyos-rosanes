@@ -82,6 +82,9 @@ thread. O primeiro tipo em tempo de compilação, o segundo em tempo de execuç�
 \textit{Thread Control Block} (TCB) contém informações essenciais da thread, como seu identificador, seu estado de
 execução, o valor dos registradores (para troca de contexto), entre outras.
 
+A troca de contexto é feita por códigos específicos para cada plataforma. É utilizada a linguagem assembly junto com C,
+para armazenar o valor dos registradores importantes na TCB.
+
 \pagebreak
 
 \begin{thebibliography}{9}

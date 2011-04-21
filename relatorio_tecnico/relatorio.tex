@@ -376,7 +376,8 @@ E, por último, no comando \textit{Scheduler.postTask()}, deve-se adicionar:
 \end{lstlisting}
 
 %----------------------------------------
-\subsection{Modelo de threads do TinyOS}
+\subsection{TinyOS Threads}
+\subsubsection{Modelo de threads do TinyOS}
 %!!!explicar esse trecho melhor depois!!!
 %Os conceitos já utilizados/implementados por threads que ajudarão na criação de uma interface do corotinas são: 
 %Chamadas bloqueantes ao sistema, re-aproveitamento dos serviçõs oferecidos, bloco de controle de threads (TCB), e
@@ -437,6 +438,167 @@ A troca de contexto é feita por códigos específicos para cada plataforma.
 %  __asm__("mov %0,r2 \n\t" : "=r" ((t)->regs.r2) : );   \
 %\end{lstlisting}
 
+%!!!Texto não revisado a partir daqui até a section Escalonadores propostos!!!
+\subsubsection{Implementação}
+A seguir descrevemos detalhes da implementação do \textit{TOSThread}. Mostraremos a organização dos diretório e os
+códigos fonte mais importantes.
+
+\paragraph{Organização dos diretórios:}
+O diretório raiz do \textit{TOSThread} é \textit{/opt/tinyos-2.1.1/tos/lib/tosthreads/}.
+A seguir sua estrutura básica de diretórios e as respectivas descrições\footnote{Todos os arquivos serão referenciados a partir do diretório
+raiz \textit{/opt/tinyos-2.1.1/tos/lib/tosthreads/}. i.e. \textit{types/thread.h}}:
+\begin{description}
+\setlength{\itemsep}{0.2pt}
+\setlength{\parskip}{0pt}
+\setlength{\parsep}{0pt}
+    \item[chips:] Código específico de chips.
+    \item[interfaces:] Interfaces do sistema.
+    \item[lib:] Extensões e subsistemas.
+        \begin{description}
+        \setlength{\itemsep}{0.2pt}
+        \setlength{\parskip}{0pt}
+        \setlength{\parsep}{0pt}
+            \item[net:] Protocolos de rede (protocolos \textit{multihop}).
+            \item[printf:] Imprime pequenas mensagens através da porta serial (para depuração).
+            \item[serial:] Comunicação serial.
+        \end{description}
+    \item[platforms:] Código específico de plataformas.
+    \item[sensorboards:] Drivers para placas de sensoreamento.
+    \item[system:] Componentes do sistema.
+    \item[types:] Tipos de dado do sistema (arquivos header).
+\end{description}
+
+\paragraph{\textit{types/thread.h}:} 
+Este arquivo contém os tipos de dados e constantes excenciais para threads. A seguir estão listados esses dados, e seus
+respectivos códigos.
+Estados que uma thread pode assumir, como ativo, inativo, pronto e suspenso.
+\begin{lstlisting}
+enum {
+    TOSTHREAD_STATE_INACTIVE = 0,  //This thread is inactive and cannot be run until started
+    TOSTHREAD_STATE_ACTIVE = 1,  //This thread is currently running on the cpu
+    TOSTHREAD_STATE_READY = 2,  //This thread is not currently running, but is not blocked and has work to do 
+    TOSTHREAD_STATE_SUSPENDED = 3,  //This thread has been suspended by a system call (i.e. blocked)
+};
+\end{lstlisting}
+Constantes que controlam a quantidade máxima de threads, e o periodo de preempção.
+\label{thread_t}Estrutura da thread que contém dados como identificador, ponteiro para pilha, estado, ponteiro para função,
+registradores.
+\begin{lstlisting}
+struct thread {
+volatile struct thread* next_thread;  
+    //Pointer to next thread for use in queues when blocked
+thread_id_t id;                       
+    //id of this thread for use by the thread scheduler
+init_block_t* init_block;             
+    //Pointer to an initialization block from which this thread was spawned
+stack_ptr_t stack_ptr;                
+    //Pointer to this threads stack
+volatile uint8_t state;               
+    //Current state the thread is in
+volatile uint8_t mutex_count;         
+    //A reference count of the number of mutexes held by this thread
+uint8_t joinedOnMe[(TOSTHREAD_MAX_NUM_THREADS - 1) 
+    / 8 + 1]; //Bitmask of threads waiting for me to finish
+void (*start_ptr)(void*);             
+    //Pointer to the start function of this thread
+void* start_arg_ptr;                  
+    //Pointer to the argument passed as a parameter to the start function of this thread
+syscall_t* syscall;                   
+    //Pointer to an instance of a system call
+thread_regs_t regs;                   
+    //Contents of the GPRs stored when doing a context switch
+};
+\end{lstlisting}
+Estrutura para controle de chamadas de sistema. Contém seu identificador, qual thread está executando, 
+ponteiro para função que a implementa.
+\begin{lstlisting}
+struct syscall {
+struct syscall* next_call;        
+    //Pointer to next system call for use in syscall queues when blocking on them
+syscall_id_t id;                  
+    //client id of this system call for the particular syscall_queue within which it is being held
+thread_t* thread;                 
+    //Pointer back to the thread with which this system call is associated
+void (*syscall_ptr)(struct syscall*);   
+    //Pointer to the the function that actually performs the system call
+void* params;                     
+    //Pointer to a set of parameters passed to the system call once it is running in task context};
+\end{lstlisting}
+Também existe uma estrutura chamada \textit{initblock} usada para threads dinâmicas.
+%!!!Não entendi este init_block direito!!!
+%Na verdade o nome da estrutura é init_block, porém da problema no _
+\paragraph{\textit{interfaces/Thread.nc}:} Contém os comandos de gerênciamento da thread e um evento para executá-la.
+\begin{lstlisting}
+interface Thread {
+    command error_t start(void* arg);
+    command error_t stop();
+    command error_t pause();
+    command error_t resume();
+    command error_t sleep(uint32_t milli);
+    event void run(void* arg);
+    command error_t join();
+}  
+\end{lstlisting}
+\paragraph{\textit{interfaces/ThreadInfo.nc}:} Contém um comando \textit{get()} para receber as informações da thread.
+\begin{lstlisting}
+interface ThreadInfo {
+    async command error_t reset();
+    async command thread_t* get();
+} 
+\end{lstlisting}
+\paragraph{\textit{interfaces/ThreadScheduler.nc}:} Contém os comandos para gerênciar todas as threads. Essas funções
+servem para receber informações, inicialização e troca de contexto.
+\begin{lstlisting}
+interface ThreadScheduler {
+    async command uint8_t currentThreadId();
+    async command thread_t* currentThreadInfo();
+    async command thread_t* threadInfo(thread_id_t id);
+
+    command error_t initThread(thread_id_t id);
+    command error_t startThread(thread_id_t id);
+    command error_t stopThread(thread_id_t id);
+
+    async command error_t suspendCurrentThread();
+    async command error_t interruptCurrentThread();
+
+    async command error_t wakeupThread(thread_id_t id);
+    async command error_t joinThread(thread_id_t id);
+}
+\end{lstlisting}
+\paragraph{\textit{system/ThreadInfoP.nc}:} Contém o vetor que representa a pilha, as informações da thread,
+como visto em \ref{thread_t} e a função que sinaliza a execução.
+\begin{lstlisting}
+generic module ThreadInfoP(uint16_t stack_size, uint8_t thread_id) { 
+provides {
+    interface Init; // Para Inicializar as informacoes
+    interface ThreadInfo; // Para exportar as Informacoes da thread
+    interface ThreadFunction; // Sinaliza para a thread executar 
+}}
+
+implementation {
+  uint8_t stack[stack_size];
+  thread_t thread_info;
+
+  void run_thread(void* arg) __attribute__((noinline)) {
+    signal ThreadFunction.signalThreadRun(arg);
+  }
+  
+  error_t init() {
+    thread_info.next_thread = NULL;
+    thread_info.id = thread_id;
+    thread_info.init_block = NULL;
+    thread_info.stack_ptr = (stack_ptr_t)(STACK_TOP(stack, sizeof(stack)));
+    thread_info.state = TOSTHREAD_STATE_INACTIVE;
+    thread_info.mutex_count = 0;
+    thread_info.start_ptr = run_thread;
+    thread_info.start_arg_ptr = NULL;
+    thread_info.syscall = NULL;
+    return SUCCESS;
+  }
+
+  ... Comandos de interface ...
+}
+\end{lstlisting}
 
 %----------------------------------------------------------------------------------------------------
 \section{Escalonadores propostos para o TinyOS}\label{escalonadorespropostos}

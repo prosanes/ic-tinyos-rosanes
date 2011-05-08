@@ -50,10 +50,10 @@
 %\end{titlepage}
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%\section{Modelo}\label{modelo}
-\textit{TOSThreads} permite programação em thread no TinyOS, sem violar violar ou limitar o modelo de concorrência do
+\section{Modelo}\label{modelo}
+\textit{TOSThreads} permite programação em thread no TinyOS, sem violar ou limitar o modelo de concorrência do
 sistema. O TinyOS executa em uma única thread, a nível de kernel enquanto a aplicação executa em uma ou mais threads, a nível de usuário.
 Em termos de escalonamento, o kernel tem prioridade máxima, ou seja, a aplicação só executa quando o núcleo do sistema
 está ocioso. Ele é responsável pelo escalonamento de tarefas e execução das chamadas de sistemas. 
@@ -64,7 +64,7 @@ chamadas são implementadas aproveitando os serviços já disponíveis do TinyOS
 
 Passam a existir três tipos de contextos de execução: tarefas, interrupções e threads. Tarefas e interrupções podem
 interromper threads de aplicação, mas não o contrário. Threads tem preempção entre elas, de modo que é necessário o uso de primitivas 
-de sincronização. As opções fornecidas são \textit{Mutex}, semáforos, barreiras, variáveis de condição, e contador
+de sincronização. As opções fornecidas são \textit{mutex}, semáforos, barreiras, variáveis de condição, e contador
 bloqueante. Esta ultima foi desenvolvida especialmente para o TinyOS. Seu uso se dá de forma que a thread fica bloqueada
 até o contador atingir um número arbitrário, enquanto outras threads podem incrementar ou decrementar esta variável
 através de uma interface.
@@ -84,6 +84,97 @@ execução, o valor dos registradores (para troca de contexto), entre outras.
 
 A troca de contexto é feita por códigos específicos para cada plataforma. É utilizada a linguagem assembly junto com C,
 para armazenar o valor dos registradores importantes na TCB.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Implementação}
+Detalhes da implementação do \textit{TOSThread}.
+
+\subsection{Organização dos diretórios}
+O diretório raiz do \textit{TOSThread} é \textit{/opt/tinyos-2.1.1/tos/lib/tosthreads/}.
+A estrutura básica de diretórios e suas descrições\footnote{Todos os arquivos serão referenciados a partir do diretório
+raiz \textit{/opt/tinyos-2.1.1/tos/lib/tosthreads/}. i.e. \textit{types/thread.h}}:
+\begin{description}
+\setlength{\itemsep}{0.2pt}
+\setlength{\parskip}{0pt}
+\setlength{\parsep}{0pt}
+    \item[chips:] Código específico de chips.
+    \item[interfaces:] Interfaces do sistema.
+    \item[lib:] Extensões e subsistemas.
+        \begin{description}
+        \setlength{\itemsep}{0.2pt}
+        \setlength{\parskip}{0pt}
+        \setlength{\parsep}{0pt}
+            \item[net:] Protocolos de rede (protocolos \textit{multihop}).
+            \item[printf:] Imprime pequenas mensagens através da porta serial (para depuração).
+            \item[serial:] Comunicação serial.
+        \end{description}
+    \item[platforms:] Código específico de plataformas.
+    \item[sensorboards:] Drivers para placas de sensoreamento.
+    \item[system:] Componentes do sistema.
+    \item[types:] Tipos de dado do sistema (arquivos header).
+\end{description}
+
+\subsection{Tipos e estruturas de dados}
+O arquivo \textbf{types/thread.h} contém os tipos de dados e constantes excenciais para threads.
+Estados que um thread pode assumir, como ativo, inativo, pronto e suspenso.
+\begin{lstlisting}
+enum {
+    TOSTHREAD_STATE_INACTIVE = 0,  //This thread is inactive and cannot be run until started
+    TOSTHREAD_STATE_ACTIVE = 1,  //This thread is currently running on the cpu
+    TOSTHREAD_STATE_READY = 2,  //This thread is not currently running, but is not blocked and has work to do 
+    TOSTHREAD_STATE_SUSPENDED = 3,  //This thread has been suspended by a system call (i.e. blocked)
+};
+\end{lstlisting}
+Constantes que controlam a quantidade máxima de threads, e o periodo de preempção.
+Estrutura do thread que contém dados como identificador, ponteiro para pilha, estado, ponteiro para função,
+registradores.
+\begin{lstlisting}
+struct thread {
+volatile struct thread* next_thread;  
+    //Pointer to next thread for use in queues when blocked
+thread_id_t id;                       
+    //id of this thread for use by the thread scheduler
+init_block_t* init_block;             
+    //Pointer to an initialization block from which this thread was spawned
+stack_ptr_t stack_ptr;                
+    //Pointer to this threads stack
+volatile uint8_t state;               
+    //Current state the thread is in
+volatile uint8_t mutex_count;         
+    //A reference count of the number of mutexes held by this thread
+uint8_t joinedOnMe[(TOSTHREAD_MAX_NUM_THREADS - 1) 
+    / 8 + 1]; //Bitmask of threads waiting for me to finish
+void (*start_ptr)(void*);             
+    //Pointer to the start function of this thread
+void* start_arg_ptr;                  
+    //Pointer to the argument passed as a parameter to the start function of this thread
+syscall_t* syscall;                   
+    //Pointer to an instance of a system call
+thread_regs_t regs;                   
+    //Contents of the GPRs stored when doing a context switch
+};
+\end{lstlisting}
+Estrutura para controle de chamadas de sistema. Contém seu identificador, qual thread está executando, 
+ponteiro para função que a implementa.
+\begin{lstlisting}
+struct syscall {
+struct syscall* next_call;        
+    //Pointer to next system call for use in syscall queues when blocking on them
+syscall_id_t id;                  
+    //client id of this system call for the particular syscall_queue within which it is being held
+thread_t* thread;                 
+    //Pointer back to the thread with which this system call is associated
+void (*syscall_ptr)(struct syscall*);   
+    //Pointer to the the function that actually performs the system call
+void* params;                     
+    //Pointer to a set of parameters passed to the system call once it is running in task context};
+\end{lstlisting}
+Também existe uma estrutura chamada \textit{initblock} usada para threads dinâmicas.
+
+\subsection{Componentes da Thread}
+%!!!nao sei o que é PoolThreadC.nc ou PoolThreadP.nc!!!
+
 
 \pagebreak
 

@@ -952,6 +952,9 @@ atendidas por completo para que as outras sejam antendidas.
 %---------------------------------------------------------------------------------------------------
 %!!!Texto desta seção não está revisado!!!
 \section{Implementação de co-rotinas para o TinyOS}
+O modelo que decidimos implementas foi um descrito por A. Moura em sua tese de doutorado\cite[s. 6.2]{Moura/04}.
+Neste modelo temos uma co-rotina principal que escalona as outras co-rotinas.
+
 Nossa implementação utilizou como base a extensão \textit{TOSThreads}, vista na seção \ref{TOSThreads}. O primeiro passo
 foi criar uma cópia do diretório desta extensão, um novo \textit{target} para o \textit{make} do TinyOS, e fazê-lo apontar
 para este. 

@@ -1,4 +1,4 @@
-\documentclass[a4paper,onecolumn, 10pt]{article}
+\documentclass[a4paper, 10pt]{article}
 \usepackage[utf8]{inputenc}
 \usepackage[portuguese,brazil]{babel}
 \usepackage{ae}
@@ -13,20 +13,19 @@
 %\parskip 7.2pt           % sets spacing between paragraphs
 \renewcommand{\baselinestretch}{1.5}
 
-\usepackage{color}
+
 \usepackage{listings}
 \lstset{ %
 language=C++,                % choose the language of the code
 basicstyle=\footnotesize,       % the size of the fonts that are used for the code
-backgroundcolor=\color{white},  % choose the background color. You must add
 showspaces=false,               % show spaces adding particular underscores
 showstringspaces=false,         % underline spaces within strings
 showtabs=false,                 % show tabs within strings adding particular underscores
 frame=single,                   % adds a frame around the code
 tabsize=2,                  % sets default tabsize to 2 spaces
-captionpos=b,                   % sets the caption-position to bottom
-breaklines=true,                % sets automatic line breaking
-breakatwhitespace=false,        % sets if automatic breaks should only happen at whitespace
+%captionpos=b,                   % sets the caption-position to bottom
+%breaklines=true,                % sets automatic line breaking
+%breakatwhitespace=false,        % sets if automatic breaks should only happen at whitespace
 title=\lstname,                 % show the filename of files included with \lstinputlisting;
 % also try caption instead of title
 escapeinside={\%*}{*)},         % if you want to add a comment within your code
@@ -41,10 +40,10 @@ belowskip=0pt
 
 \begin{document}
 
-%\begin{titlepage}
+\begin{titlepage}
 \maketitle
-%\tableofcontents
-%\end{titlepage}
+\tableofcontents
+\end{titlepage}
 
 \abstract{Resumo}\label{resumo}
 Redes de Sensores Sem Fio (RSSFs) são formadas por pequenos dispositivos de sensoreamento, com 
@@ -204,6 +203,8 @@ Nessa etapa, estudamos o funcionamento do modelo de multithreading oferecido pel
 Iniciamos o estudo sobre o conceito de co-rotinas, suas características básicas  e como ele 
 pode ser  aplicado no TinyOS. Revisamos a implementação de co-rotinas proposta para a antiga versão do 
 TinyOS (versão 1.0), feita por Silvana Rosseto em sua tese de doutorado~\cite{Rossetto/06}.
+%???Explicar mais sobre esse item???
+
 \end{itemize}
 
 A próxima etapa do trabalho dará continuidade ao estudo sobre co-rotinas e prevê 
@@ -303,6 +304,7 @@ Para alterar o escalonador basta adicionar uma configuração com o nome {\em Ti
 no diretório da aplicação e amarrá-la ao componente responsável pela implementação da aplicação. 
 Dentro desta configuração, amarra-se a interface \textit{Scheduler} 
 à implementação do escalonador~\cite{TEP106}, como mostra o exemplo abaixo:
+
 \begin{lstlisting}
 configuration TinySchedulerC {
     provides interface Scheduler; }
@@ -377,7 +379,7 @@ E, por último, no comando \textit{Scheduler.postTask()}, deve-se adicionar:
 \end{lstlisting}
 
 %----------------------------------------
-\subsection{TinyOS Threads}
+\subsection{TinyOS Threads} \label{TOSThreads}
 \subsubsection{Modelo de threads do TinyOS}
 %!!!explicar esse trecho melhor depois!!!
 %Os conceitos já utilizados/implementados por threads que ajudarão na criação de uma interface do corotinas são: 
@@ -419,25 +421,6 @@ a criação é feita em tempo de execução. O bloco de controle, também chamad
 \textit{Thread Control Block} (TCB), contém informações essenciais da thread, como seu identificador, seu estado de
 execução, o valor dos registradores (para troca de contexto), entre outras\cite{TEP134}.
 A troca de contexto é feita por códigos específicos para cada plataforma. 
-%!!!explicar esse trecho melhor depois!!!
-%É utilizada a linguagem assembly junto com C,
-%para armazenar o valor dos registradores importantes na TCB. Exemplo do código utilizado para o chip \textit{atm218}:
-%\begin{lstlisting}
-%//Define on platform specific basis for inclusion in
-%// the thread control block
-%typedef struct thread_regs {
-%    uint8_t status;
-%    uint8_t r0;
-%    uint8_t r1;
-%    uint8_t r2;
-%    ...
-%}
-%//Save General Purpose Registers
-%#define SAVE_GPR(t)                                     \
-%  __asm__("mov %0,r0 \n\t" : "=r" ((t)->regs.r0) : );   \
-%  __asm__("mov %0,r1 \n\t" : "=r" ((t)->regs.r1) : );   \
-%  __asm__("mov %0,r2 \n\t" : "=r" ((t)->regs.r2) : );   \
-%\end{lstlisting}
 
 %!!!Texto não revisado a partir daqui até a section Escalonadores propostos!!!
 \subsubsection{Implementação}
@@ -870,6 +853,20 @@ thread. Por último, a função \textit{switchThreads()} retornará para o ender
 novo endereço, como visto acima, aponta para a função \textit{threadWrapper()}. Esta por sua vez, através de uma função
 e duas sinalizações executa a thread.
 
+\paragraph{Trocas de Contextos}
+acontecem por três motivos diferentes: ocorrência de uma interrupção, termino do tempo de execução da thread, ou chamadas
+bloqueantes ao sistema. 
+Para implementar o primeiro caso, é inserida a função \textit{postAmble} ao final de todas as rotinas de processamento
+de interrupção. Esta função verifica se foi postada uma nova tarefa, e caso positivo, o controle é passado para o
+\textit{kernel}. Caso contrário, a thread continua a executar logo após o termino do tratador de interrupção.
+Para implementar o segundo caso, é utilizado um temporizador que provoca uma interrupção ao final de cada
+\textit{timeslice}. Esta posta uma tarefa, forçando o \textit{kernel} a assumir o controle e escalonar a próxima thread.
+
+As chamadas de sistema transformam os serviços de duas fases dos TinyOS em chamadas bloqueantes. Para o programador isso
+facilita a programação pois torna o fluxo do código continuo. Para permitir isto, essa nova estrutura posta uma tarefa
+que executará a primeira fase do serviço (\textit{command}/\textit{call}), suspende a thread e a acorda o
+\textit{kernel} para escalonar outra thread. Ao chegar o evento (através de uma tarefa), a \textit{syscall} acorda a thread e lhe repassa o dado.
+
 %----------------------------------------------------------------------------------------------------
 \section{Escalonadores propostos para o TinyOS}\label{escalonadorespropostos}
 Nesta seção apresentamos o projeto e as etapas de implementação de novos escalonadores
@@ -951,6 +948,13 @@ atendidas por completo para que as outras sejam antendidas.
 
 %!!!detalhar esse trecho melhor depois!!!
 %Definiu-se que a ordem de prioridade seria serial, rádio, sensor e por último básica.
+
+%---------------------------------------------------------------------------------------------------
+%!!!Texto desta seção não está revisado!!!
+\section{Implementação de co-rotinas para o TinyOS}
+Nossa implementação utilizou como base a extensão \textit{TOSThreads}, vista na seção \ref{TOSThreads}. O primeiro passo
+foi criar uma cópia do diretório desta extensão, um novo \textit{target} para o \textit{make} do TinyOS, e fazê-lo apontar
+para este. 
 
 %----------------------------------------------------------------------------------------------------
 \section{Experimentos realizados}\label{resultados}

@@ -64,13 +64,13 @@ Eventos e comandos que podem ser sinalizados ou chamados a partir de um trador d
 
 O comando \textit{atomic} permite que um trecho de instruções possa ser executado sem ser interrompido. Dois fatos importantes surgem com o seu uso, primeiro a ativação e desativação de interrupções consome ciclos de CPU. Segundo, longos trechos atômicos podem atrasar outras interrupções, portanto é preciso tomar cuidado ao chamar outros componentes a partir desses blocos.
 
-Algumas vezes é preciso usar um certo hardware por um longo tempo, sem compartilhá-lo. Como a necessidade de atomicidade não está no processador e sim no hardware, pode-se conceder sua exclusividade a somente um 'usuário' através de \textit{Power locks}. Para isso, primeiro é feito um pedido através de um comando, depois quando o recurso desejado estiver disponível, um evento é sinalizado. Assim não há bloqueio de execução, como em semáforos. Existe a possibilidade de requisição imediata. Nesse caso nenhum evento será sinalizado: se o recurso não estiver protegido, ele será imediatamente cedido, caso contrário, o comando retornará falso. \textit{Power Locks} têm três sub-componentes: Um abitrador que gerência as prioridades dos pedidos, um gerênciador de energia e um configurador que ajusta o hardware de acordo com o cliente.
+Algumas vezes\cite{tep106} é preciso usar um certo hardware por um longo tempo, sem compartilhá-lo. Como a necessidade de atomicidade não está no processador e sim no hardware, pode-se conceder sua exclusividade a somente um 'usuário' através de \textit{Power locks}. Para isso, primeiro é feito um pedido através de um comando, depois quando o recurso desejado estiver disponível, um evento é sinalizado. Assim não há bloqueio de execução, como em semáforos. Existe a possibilidade de requisição imediata. Nesse caso nenhum evento será sinalizado: se o recurso não estiver protegido, ele será imediatamente cedido, caso contrário, o comando retornará falso. \textit{Power Locks} têm três sub-componentes: Um abitrador que gerência as prioridades dos pedidos, um gerênciador de energia e um configurador que ajusta o hardware de acordo com o cliente.
 
 \pagebreak
 
 \begin{thebibliography}{99}
 
-\bibitem{tutorial6} Tutorial 6, Boot Sequence. http://docs.tinyos.net/index.php/Boot_Sequence 
+\bibitem{tutorial6} Tutorial 6, Boot Sequence. \url{ http://docs.tinyos.net/index.php/Boot_Sequence }
 
 \bibitem{tep106} P. Levis e C. Sharp. TEP 106: Schedulers and Tasks. http://www.tinyos.net/tinyos-2.x/doc/html/tep106.html
 \bibitem{tep107} P. Levis. TEP 107: TinyOS 2.x Boot Sequence. http://www.tinyos.net/tinyos-2.x/doc/html/tep107.html

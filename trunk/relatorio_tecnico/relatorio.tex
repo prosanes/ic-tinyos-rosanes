@@ -80,25 +80,27 @@ com as restrições e características particulares desses ambientes.
 A arquitetura adotada pelo TinyOS~\cite{tinyos/00} --- um dos sistemas operacionais mais usados
 na pesquisa nessa área --- prioriza fortemente o tratamento dessas restrições em 
 detrimento da simplicidade oferecida para o desenvolvimento de aplicações. 
-A linguagem de programação usada é o nesC~\cite{nesc/03}, uma adaptação de C que provê baixo 
-consumo de memória, optimizações, e previne condições de corrida.
+A linguagem de programação usada é o nesC~\cite{nesc/03}, uma extensão de C que provê um modelo de programação baseado
+em componentes e orietado a eventos.
+%que provê baixo consumo de memória, optimizações, e previne condições de corrida.
+%^^ Destacar depois em caracteristicas de nesC
 Para lidar com as diversas operações de entrada e saída, o TinyOS utiliza um modelo de 
-execução em duas fases, evitando bloqueios e consequentemente armazenamento de estados. 
+execução em duas fases, evitando bloqueios e, consequentemente, armazenamento de estados. 
 A primeira fase da operação é um comando que pede ao hardware a execução de um serviço 
 (ex.: sensoreamento). Este comando retorna imediatamente dando continuidade à execução. Quando o
 serviço é terminado, o hardware envia uma interrupção, sinalizada como um evento pelo TinyOS. 
-Então, o tratador do envento recebe as informações (ex., valor sensoreado) e lida com elas conforme programado. 
+Então, o tratador do evento recebe as informações (ex.: valor sensoreado) e trata/processa essas informações conforme programado. 
 O problema gerado por essa abordagem é a falta da visão de um fluxo contínuo de execução 
 na perspectiva do programador. 
 
 O modelo de concorrência divide o código em dois tipos: assíncrono e síncrono. 
-Um código  assíncrono pode ser alcançável a partir de pelo menos
+Um código assíncrono pode ser alcançável a partir de pelo menos
 um tratador de interrupção. Em função disso, a execução desses trechos do programa pode ser interrompida
 a qualquer momento e é necessário tratar possíveis condições de corrida.
 Um código síncrono é alcançável somente a partir de tarefas (\textit{tasks}) que são 
 procedimentos adiados (postergados). Tarefas executam até terminar (não existe concorrência entre elas), 
-por isso as condições de corrida são evitadas.  
-As tarefas são todas escalonadas por um componente do TinyOS que usa uma política de escalonamento 
+por isso as condições de corrida, neste contexto, são evitadas.  
+As tarefas são todas escalonadas por um componente do TinyOS que usa uma política padrão de escalonamento 
 do tipo \textit{First-in First-out}~\cite{LevisGay/09}.
 
 Com o objetivo de oferecer maior flexibilidade aos desenvolvedores de aplicações, 
@@ -106,119 +108,91 @@ a versão mais atual do TinyOS (versão 2.1.x) trouxe novas facilidades.
 Uma delas é a possibilidade de substituir o componente de escalonamento de tarefas
 para implementar diferentes políticas de escalonamento~\cite{TEP106}.
 A outra é a possibilidade de usar o modelo de programação multithreading,
-um modelo de programação mais conhecido pelos desenvolvedores de aplicações e que pode
-ser usado como alternativa para lidar com as dificuldades do modelo de programação baseado em eventos.
+ mais conhecido pelos desenvolvedores de aplicações e que pode
+ser usado como alternativa para lidar com as dificuldades da programação orientada a eventos.
 
-Neste trabalho avaliamos essas novas facilidades do TinyOS.
-Começamos propondo novos escalonadores de tarefas, implementando políticas de escalonamento por
-prioridade. Avaliamos o modelo de multithreading oferecido, comparando diferentes formas de implementação
-de uma aplicação básica e o custo da gerência de threads. O próximo passo será a implementação
-de um mecanismo que permita gerência cooperativa de tarefas para o TinyOS, visando 
+Neste trabalho avaliamos essas novas facilidades do TinyOS e propomos extensões que visam oferecer facilidade adicionais
+para os desenvolvedores de aplicações.
+Inicialmente propusemos novos escalonadores de tarefas, implementando diferentes políticas de escalonamento por
+prioridade e avaliamos o modelo de multithreading oferecido, comparando diferentes formas de implementação
+de uma aplicação básica e o custo da gerência de threads. Em seguida, tomando como base o modelo multithreading
+oferecido, projetamos um mecanismo de gerência cooperativa de tarefas para o TinyOS, visando 
 uma solução alternativa entre o modelo de escalonamento de tarefas que executam até terminar 
-(e evitam condições de corrida) e o modelo de execução alternada entre as tarefas 
-(que permite maior flexibilidade durante a execução, mas com custo de gerência alto).
-Neste documento, apresentamos as atividades já executadas e os resultados alcançados.
+e evitam condições de corrida, e o modelo de execução alternada entre as tarefas 
+que permite maior flexibilidade durante a execução, mas com custo de gerência alto.
+
+O modelo de gerência cooperativa de tarefas é uma solução viável para as redes de sensores sem fios devido simplicidade
+do hardware. Como os processadores têm somente um núcleo, e não possuem tecnologia hyperthreading, não é possível 
+existir duas unidades de execução rodando em paralelo. Portanto uma gerência cooperativa de tarefas seria uma solução
+menos custosa, por eliminar a necessidade de mecânismos de sincronização, e diminuir o número de trocas de contexto.
+
+%!!!Acrescentar organização do resto do texto!!!
 
 %----------------------------------------------------------------------------------------------------
-\section{Objetivos}\label{objetivos}
-Os principais objetivos deste trabalho são:
-\begin{itemize}
-\item aprofundar o conhecimento sobre o modelo de concorrência do TinyOS;
-\item avaliar as novas facilidades introduzidas na versão 2.1.x do TinyOS, 
-incluindo a possibilidade de alterar o componente de escalonamento de tarefas e a implementação de threads;
-\item propor e desenvolver diferentes políticas de escalonamento de tarefas;
-\item implementar um mecanismo de gerência cooperativa de tarefas para o TinyOS baseado no 
-conceito de co-rotinas~\cite{Rossetto/06}.
-\end{itemize}
+%\section{Objetivos}\label{objetivos}
+%Os principais objetivos deste trabalho são:
+%\begin{itemize}
+%\item aprofundar o conhecimento sobre o modelo de concorrência do TinyOS;
+%\item avaliar as novas facilidades introduzidas na versão 2.1.x do TinyOS, 
+%incluindo a possibilidade de alterar o componente de escalonamento de tarefas e a implementação de threads;
+%\item propor e desenvolver diferentes políticas de escalonamento de tarefas;
+%\item implementar um mecanismo de gerência cooperativa de tarefas para o TinyOS baseado no 
+%conceito de co-rotinas~\cite{Rossetto/06}.
+%\end{itemize}
 
 %----------------------------------------------------------------------------------------------------
-\section{Metodologia}\label{metodologia}
-Dividimos o trabalho em quatro etapas e dentro de cada etapa enumeramos as atividades
-a serem desenvolvidas: 
-\begin{enumerate}
-\item {\bf Primeira etapa} %(out, nov)
-\begin{itemize}
-  \item Estudar material introdutório sobre as ferramentas TinyOS, nesC e TOSSIM (simulador do TinyOS).
-  \item Instalar as ferramentas e experimentá-las em aplicações básicas.
-  \item Estudar/revisar conceitos fundamentais sobre concorrência e gerência de tarefas em sistemas operacionais.
-\end{itemize}
-\item {\bf Segunda etapa} %(nov, dez, jan)
-\begin{itemize}
-  \item Estudar o modelo de concorrência do TinyOS.
-  \item Projetar, implementar e avaliar outros componentes básicos de escalonamento de
-  tarefas para o TinyOS.
-  \item Redigir relatório técnico sobre os componentes de escalonamento desenvolvidos.
-  \item Estudar o modelo de threads do TinyOS.
-  \item Implementar aplicações básicas usando o modelo de threads do TinyOS.
-  \item Redigir relatório técnico sobre o modelo de concorrência e os mecanismos de gerência de tarefas do TinyOS.
-\end{itemize}
-\item {\bf Terceira etapa} %(fev, mar, abr, mai)
-\begin{itemize}
-  \item Estudar o conceito de co-rotinas (mecanismo de gerência cooperativa de tarefas)
-  \item Elaborar uma proposta de extensão do modelo de concorrência do TinyOS e
-  dos seus mecanismos de gerência de tarefas.
-  %\item Descrever resumidamente a proposta
-  \item Projetar a solução e os experimentos que deverão ser realizados.
-  %\item Descrever o projeto e modelagem da solução e dos experimentos
-  \item Implementar a solução, executar os experimentos e avaliar os resultados.
-  \item Redigir texto com proposta, projeto, modelagem, implementação e experiemntos  realizados.
-\end{itemize}
-\item {\bf Quarta etapa} %(mai, jun, jul, ago)
-\begin{itemize}
-%  \item Avaliar os resultados obtidos e refinar a proposta de solução.
-  \item Propor trabalhos futuros.
-%  \item Redigir relatório final sobre a Iniciação Científica: atividades realizadas, conhecimentos adquiridos, dificuldades encontradas.
-  \item Redigir relatório técnico completo sobre o trabalho realizado. 
-\end{itemize}
-\end{enumerate}
+\section{Conceitos Básicos}\label{teoria}
+a
 
-%----------------------------------------------------------------------------------------------------
-\section{Atividades realizadas}\label{atividades}
-A seguintes atividades já foram realizadas:
-\begin{itemize}
-\item {\bf Estudo sobre o sistema operacional TinyOS}:
-Estudo feito sobre o sistema operacional TinyOS, sua linguagem de programação nesC e o simulador TOSSIM.
-Como fonte do aprendizado foram usados o minicurso desenvolvido pela 
-professora Silvana Rosseto\cite{Rossetto/10}, o material oferecido
-pela página do TinyOS\cite{tinyos}, e o livro \textit{TinyOS Programming}, de Levis e Gay\cite{LevisGay/09}.
+\subsection{Rede de Sensores Sem Fio, TinyOS e nesC}
+Uma rede de sensores sem fio (RSSF) é um conjunto de dispositivos formando uma rede de comunicação \textit{ad-hoc}. Cada
+sensor tem a capacidade de monitorar diversas propriedades físicas, como intensidade luminosa, temperatura, aceleração,
+entre outras. Através de troca de mensagens, esses dispositivos podem unir todas essas informações para detectar um evento
+importante no local, como um incêndio. Essa conclusão é então encaminhada para um nó com maior capacidade computacional,
+conhecido como estação base. Este nó decidir uma ação, ou enviar a informação pela internet. Esses sensores são usados para 
+monitorar ambientes de difícil acesso, onde uma rede cabeada seria inviável ou custosa.
+Alguns exemplos reais do uso de RRSF são: monitoramento da ponte Golden Gate em São Francisco, e dos vulcões Reventador e Tungurahua no
+Equador~\cite{LevisGay/09}. 
+Além da necessidade de serem sem fio, a outra principal característica dos sensores é o baixo consumo de energia. Para
+evitar manutenções da rede, em ambientes de difícil acesso.
 
-\item {\bf Estudo sobre concorrência e gerência de tarefas em Sistemas Operacionais}:
-Antes de estudar o modelo de concorrência e gerência de tarefas específica do TinyOS, 
-foi feita uma revisão desses conceitas em sistemas operacionais em geral. 
-O material utilizado foi o livro do professor Carlos Maziero (PUCPR)~\cite{Maziero/11}.
+Para aumentar o tempo de vida das baterias, o hardware destes dispositivos tende a ser recursos computacionais
+limitados. Ao invés de utilizar CPUs, são usados microcontroladores de 8 ou 16 bits, com relógios na ordem de 10
+megahertz. Para armazenar o código da aplicação é utilizada uma pequena memória flash, da ordem de 100kB. E para as
+variáveis existe uma memória RAM, da ordem de 10kB. Os circuitos de rádio também têm uma capacidade reduzida de
+transferência, da ordem de kilobytes por segundos~\cite{LevisGay/09}.
+Aliado ao hardware, o software também deve ser voltado para o baixo consumo de energia e de memória.
 
-\item {\bf Estudo sobre concorrência e gerência de tarefas no TinyOS}:
-Nessa etapa estudados o modelo de concorrência e os mecanismos de gerência 
-de tarefas específicos do TinyOS, incluindo a sequência de inicialização do
-TinyOS e o funcionamento do escalonador padrão.
+O TinyOS é o sistema operacional mais usado para auxiliar os programadores a desenvolverem tais aplicativos. Junto com a
+linguagem de programação nesC, é provido um modelo de programação baseado em componentes e orientado a eventos.
+Os componentes são pedaços de código reutilizáveis, onde são definidas claramente suas dependências e os serviços
+oferecidos. É através da conexão de diversos componentes que o sistema é montado.
+Já o modelo de programação orientado a eventos permite que o TinyOS rode somente uma aplicação, com uma linha de
+execução, sem a necessidade de ações bloqueantes. Todas as operações de entrada e saída são realizadas em duas fases, ou
+seja, o comando de E/S sinaliza para o hardware o que deve ser feito, e retorna imediatamente, dando continuidade a
+execução. A conclusão da operação é sinalizada através de um evento, que será tratado pela outra fase da operação de E/S.
+O TinyOS também provê um conjunto de abstrações de hardware, como serviços de sensoreamento, comunicação e
+armazenamento.
 
-\item {\bf Implementação de novos componentes de escalonamento de tarefas para o TinyOS}:
-Após os estudos realizados, projetamos e desenvolvemos diferentes políticas de escalonamento
-de tarefas para o TinyOS.
+Também é implementado o conceito de procedimento postergados, chamados de tarefas, ou \textit{tasks}, no TinyOS. Qualquer
+componentes pode postar uma tarefa, que será atendida pelo escalonador, algum tempo depois, de forma síncrona.  Elas são 
+executadas de forma não preemptiva entre si, o que ajuda a evitar condições de corrida. Além de serem utilizadas para
+sairmos de um contexto assíncrono para um contexto síncrono. 
+Por exemplo, um tratador de interrupção deve fazer somente o processamento mínimo, como transferência de dados entre o
+\textit{buffer} e a memória. Após isto, deve postar uma tarefa para sinalizar o evento 
+de conclusão da operação de E/S. Depois de um curto periodo de tempo, esta terefa será atendida, e sinalizará o evento de 
+forma síncrona.
 
-\item {\bf Estudo sobre o modelo de multithreading do TinyOS}:
-Nessa etapa, estudamos o funcionamento do modelo de multithreading oferecido pela nova versão do TinyOS.
+\subsection{Escalonamento de tarefas}
+a
 
-\item{\bf Estudo sobre a implementação de co-rotinas no TinyOS}:
-Iniciamos o estudo sobre o conceito de co-rotinas, suas características básicas  e como ele 
-pode ser  aplicado no TinyOS. Revisamos a implementação de co-rotinas proposta para a antiga versão do 
-TinyOS (versão 1.0), feita por Silvana Rosseto em sua tese de doutorado~\cite{Rossetto/06}.
-%???Explicar mais sobre esse item???
-
-\end{itemize}
-
-A próxima etapa do trabalho dará continuidade ao estudo sobre co-rotinas e prevê 
-o projeto e implementação de um mecanismo de gerência cooperativa de tarefas para o TinyOS usando
-esse mecanismo. 
-Também daremos continuidade ao estudo de threads no TinyOS, realizando experimentos 
-que permitam comparar os diferentes mecanismos de gerência de tarefas em termos de facilidade
-de programação e desempenho. 
-
-%----------------------------------------------------------------------------------------------------
-\section{Teoria}\label{teoria}
-Nesta seção descrevemos os principais resultados dos estudos realizados.
+\subsection{Multithreading e corotinas}
+a
+\subsubsection{Threads no TinyOS}
+%!!!Será que precisa dessa subsubsection, uma vez que eu vou descrever threads em detalhes a seguir? !!!
 
 %----------------------------------------------
+%!!! Deveria a partir daqui ser uma nova sessão ? !!!
 \subsection {Sequência de inicialização do TinyOS}
 O principal componente do TinyOS, responsável por inicializar o sistema, é chamado \textit{MainC}. 
 Ele inicializa os componentes de hardware e software e o escalonador de tarefas. 
@@ -226,21 +200,23 @@ Ele inicializa os componentes de hardware e software e o escalonador de tarefas.
 Primeiro é configurado o sistema de memória e escolhido o modo de processamento. 
 Com esses pré-requisitos básicos estabelecidos,  o escalonador de tarefas é inicializado 
 para permitir que as próximas etapas possam postar tarefas.
-O segundo passo é inicializar o hardware como um todo, permitindo a operabilidade da plataforma.
+O segundo passo é inicializar os demais componentes de hardware, permitindo a operabilidade da plataforma.
 Alguns exemplos são configuração de pinos de entrada e saída, calibração do clock e dos LEDs.
 Como esta etapa exige códigos específicos para cada tipo de plataforma, o MainC se liga ao componente
 \textit{PlataformC} que implementa o tratamento requerido por cada tipo de plataforma.
 
 O terceiro passo trata da inicialização dos componentes de software. 
 Além de configurar os aplicativos básicos do sistema, como
-o temporizador, nessa etapa são executados também os procedimentos de inicialização dos componentes 
-da aplicação. Para isso, os componentes da aplicação que precisam ser inicializados devem ser amarrados ao componente 
-{\em SoftwareInit}. Assim o TinyOS se responsabiliza por executar este código.
+os \textit{timer}s, nesta etapa são executados também os procedimentos de inicialização dos componentes 
+da aplicação. Para isso, os componentes da aplicação que precisam ser inicializados devem ser amarrados/ligados ao componente 
+{\em SoftwareInit}. Assim, durante a etapa de inicialização do sistema, os códigos de inicialização dos componentes da
+aplicação são automaticamente chamados.
+% !!! Esse paragrafo a cima parece ter muito a palavra inicialização !!!
 
-Por último, quando tudo é concluído, o MainC avisa a aplicação que a inicialização terminou, através do
-sinal \textit{Boot.booted()}. O TinyOS entra no
+Por último, quando todas as etapas foram concluídas, o MainC avisa a aplicação que a inicialização terminou, através do
+evento \textit{Boot.booted()}. O TinyOS entra no
 seu laço principal, no qual o escalonador espera por tarefas e as executa. É importante notar que
-durante todo este processo as interrupções do sistema ficam desabilitadas~\cite{TEP107}.
+durante todo o processo as interrupções do sistema ficam desabilitadas~\cite{TEP107}.
 
 
 %----------------------------------------------

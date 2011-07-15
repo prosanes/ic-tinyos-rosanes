@@ -1,0 +1,74 @@
+O modelo que decidimos implementas foi um descrito por Ana Moura em sua tese de doutorado\cite[s. 6.2]{Moura/04}.
+Neste modelo existe uma co-rotina principal que é responsável por escalonar as outras co-rotinas.
+
+Nossa implementação utilizou como base a extensão \textit{TOSThreads}, vista na seção \ref{TOSThreads}. O primeiro passo
+foi criar uma cópia do diretório desta extensão e um novo \textit{target} referente a este diretório para o \textit{make} do TinyOS.
+
+Na implementação do \textit{TOSThreads} existem dois casos em que ocorre preempção: termino do \textit{timeslice} e
+acontecimento de uma interrupção de hardware. Portanto foi preciso modificar esses dois casos.
+A primeira alteração foi retirar o limite de tempo de execução de cada thread. Para isso o temporizador responsável por
+essa contagem foi desabilitado.
+A segunda alteração foi criar um novo tipo de interrupção, que chamamos de interrupção curta. Originalmente, no
+\textit{TOSThreads}, quando o tratador de interrupção postava uma tarefa, o kernel assumia o controle, executava a
+tarefa e escalonava a próxima thread da fila. Na nossa implementação, após o kernel executar a tarefa, a thread que foi
+originalmente interrompida volta a executar. Para isso, foi criado um novo comando no escalonador de threads:
+\textit{brieflyInterruptCurrentThread()}
+\begin{lstlisting}
+async command error_t ThreadScheduler.brieflyInterruptCurrentThread() {
+    atomic {
+        if(current_thread->state == TOSTHREAD_STATE_ACTIVE) {
+            briefly_interrupted_thread = current_thread;
+            briefly_interrupted_thread->state =
+                TOSTHREAD_STATE_BRIEFLYINTERRUPTED;
+            interrupt(current_thread);
+            return SUCCESS;
+        }
+        return FAIL;
+    }
+}
+
+/* schedule_next_thread()
+ * This routine does the job of deciding which thread should run next.
+ * Should be complete as is.  Add functionality to getNextThreadId() 
+ * if you need to change the actual scheduling policy.
+ */
+    void scheduleNextThread() {
+        if(tos_thread->state == TOSTHREAD_STATE_READY)
+            current_thread = tos_thread;
+        else if (briefly_interrupted_thread != NULL)
+        {
+            current_thread = briefly_interrupted_thread;
+            briefly_interrupted_thread = NULL;
+        }
+        else
+            current_thread = call ThreadQueue.dequeue(&ready_queue);
+
+        current_thread->state = TOSTHREAD_STATE_ACTIVE;
+    }
+
+\end{lstlisting}
+
+Uma vez excluída a preempção, o proxímo passo foi modificar a interface da thread para permitir passagem de controle ao
+escalonador. Para isso, foi criado o comando \textit{yield()}. É importante notar que este comando pode ser chamado em 
+qualquer ponto do programa, porém só deve ser chamado dentro da thread ao qual o comando se refere.
+\begin{lstlisting}
+//Arquivo: interfaces/Thread.nc
+interface Thread {
+    ...
+    command error_t yield();
+    ...
+}
+
+//Arquivo: system/StaticThreadP.nc
+module StaticThreadP {
+    ...
+    command error_t Thread.yield[uint8_t id]() { 
+        return call ThreadScheduler.interruptCurrentThread(); 
+    } 
+    ...
+}
+\end{lstlisting}
+
+%!!! Que tal adicionar um apendice mostrando o passo-a-passo da implementação de co-rotinas? !!!
+
+

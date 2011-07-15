@@ -1,0 +1,161 @@
+\documentclass[a4paper, 10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[portuguese,brazil]{babel}
+\usepackage{ae}
+\usepackage{verbatim}
+
+\usepackage[pdftex]{graphicx} % Exposta para pdf e aceita figuras
+%\usepackage{indentfirst} % Identa primeiro paragrafo
+\usepackage{textcomp}
+\usepackage[margin=30mm]{geometry}
+\usepackage[pdfauthor={Pedro Rosanes},% Insere metadados com o nome do autor
+	    pdftitle={Extensão dos mecanismos de gerência de tarefas do sistema operacional TinyOS},% Título que será mostrado na janela do PDF
+	    pdftex]{hyperref} % Usa hiperlinks no decorrer do texto
+%\parskip 7.2pt           % sets spacing between paragraphs
+\renewcommand{\baselinestretch}{1.5}
+
+
+\usepackage{listings}
+\lstset{ %
+language=C++,                % choose the language of the code
+basicstyle=\footnotesize,       % the size of the fonts that are used for the code
+showspaces=false,               % show spaces adding particular underscores
+showstringspaces=false,         % underline spaces within strings
+showtabs=false,                 % show tabs within strings adding particular underscores
+frame=single,                   % adds a frame around the code
+tabsize=2,                  % sets default tabsize to 2 spaces
+%captionpos=b,                   % sets the caption-position to bottom
+%breaklines=true,                % sets automatic line breaking
+%breakatwhitespace=false,        % sets if automatic breaks should only happen at whitespace
+%title=\caption,                 % show the filename of files included with \lstinputlisting;
+                                % also try caption instead of title
+escapeinside={\%*}{*)},         % if you want to add a comment within your code
+morekeywords={module,uses,interface,implementation,
+                task,event,call,post,configuration,
+                components,as,async,command,error_t,
+                atomic,uint8_t,uint16_t,uint32_t,
+                int8_t,int16_t,int32_t,
+                signal,generic,provides},            % if you want to add more keywords to the set
+belowskip=0pt
+}
+
+%---------------------------------------------------------------------------------------------------
+\title{Extensão dos mecanismos de gerência de tarefas do sistema operacional TinyOS}
+\author{Bolsista: Pedro Rosanes \and Orientador: Silvana Rossetto \and Departamento de Ciência da Computação}
+\date{11 de abril de 2011}
+
+\begin{document}
+
+\begin{titlepage}
+\maketitle
+\tableofcontents
+\end{titlepage}
+
+\abstract{Resumo}
+%Ta aparecendo resumo escrito nao sei pq!
+\input{resumo.tex}
+
+%----------------------------------------------------------------------------------------------------
+\section{Introdução}\label{intro}
+\input{introducao.tex}
+%----------------------------------------------------------------------------------------------------
+%\section{Objetivos}\label{objetivos}
+%Os principais objetivos deste trabalho são:
+%\begin{itemize}
+%\item aprofundar o conhecimento sobre o modelo de concorrência do TinyOS;
+%\item avaliar as novas facilidades introduzidas na versão 2.1.x do TinyOS, 
+%incluindo a possibilidade de alterar o componente de escalonamento de tarefas e a implementação de threads;
+%\item propor e desenvolver diferentes políticas de escalonamento de tarefas;
+%\item implementar um mecanismo de gerência cooperativa de tarefas para o TinyOS baseado no 
+%conceito de co-rotinas~\cite{Rossetto/06}.
+%\end{itemize}
+
+%----------------------------------------------------------------------------------------------------
+\section{Conceitos Básicos}\label{teoria}
+
+\subsection{Rede de Sensores Sem Fio, TinyOS e nesC}
+\input{rssf-TinyOS-Nesc.tex}
+
+\subsection{Escalonamento de tarefas}
+\input{escalonamento-de-tarefas.tex}
+
+\subsection{Multithreading e corotinas}
+a
+
+%----------------------------------------------
+%!!! Deveria a partir daqui ser uma nova sessão ? !!!
+\subsection {Sequência de inicialização do TinyOS}
+\input{sequencia-inicializacao}
+
+%----------------------------------------------
+\subsection{Modelo de concorrência do TinyOS}
+\input{modelo-concorrencia}
+
+%----------------------------------------------
+\subsection{Escalonador padrão de tarefas do TinyOS}\label{escalonadorpadrao}
+\input{escalonador-padrao.tex}
+
+%----------------------------------------
+\subsection{TinyOS Threads} \label{TOSThreads}
+\subsubsection{Modelo de threads do TinyOS}
+\input{modelo-threads-teoria.tex}
+
+\subsubsection{Implementação}
+\input{modelo-threads-implementacao.tex}
+
+%----------------------------------------------------------------------------------------------------
+\section{Escalonadores propostos para o TinyOS}\label{escalonadorespropostos}
+\input{escalonadores-propostos.tex}
+%---------------------------------------------------------------------------------------------------
+%!!!Texto desta seção não está revisado!!!
+\section{Implementação de co-rotinas para o TinyOS}
+\input{co-rotinas-implementacao.tex}
+
+%----------------------------------------------------------------------------------------------------
+\section{Experimentos realizados}\label{resultados}
+Nesta seção apresentamos os experimentos realizados e os resultados obtidos.
+
+\input{experimentos-escalonadores.tex}
+
+%----------------------------------------------------------------------------------------------------
+\section{Conclusões}\label{conclusoes}
+\input{conclusoes.tex}
+%--------------------------------------------------------------------------------------
+\section{Anexos}
+\appendix
+\section{Blink}\label{a:Blink}
+\subsection{BlinkC.nc:}
+\lstinputlisting{srcs/BlinkC.nc}
+
+\subsection{BlinkAppC.nc:}
+\lstinputlisting{srcs/BlinkAppC.nc}
+
+\section{Aplicação de Teste do Escalonador com Prioridades}
+\subsection{aplicacaoTesteC.nc:}
+\lstinputlisting{srcs/aplicacaoTesteC.nc}
+
+\subsection{aplicacaoTesteAppC.nc:}
+\lstinputlisting{srcs/aplicacaoTesteAppC.nc}
+
+
+%\subsection{Atividades extras}
+%Outras atividades realizadas pelo aluno foram:
+%\begin{itemize}
+%    \item Participação no evento SBAC-PAD 2010 -- 
+%{\em 22nd International Symposium on Computer Architecture and High Performance Computing}.
+%    \item Participação no minicurso 
+%{\em Redes de sensores sem fio sob a perspectiva do EPOS}~\cite{HoellerFrohlich/10}, 
+%apresentado no SBAC-PAD 2010.    
+%    \item Participação em seminário do grupo de Redes de Computadores e Sistemas Distribuídos (RCSD)
+%do Programa de Pós-Graduação em Informática (PPGI).
+%\end{itemize}
+
+%\subsection{Avaliação do Bolsista}
+%A iniciação científica está sendo uma ótima oportunidade para etender como funciona uma pesquisa. Por meio desse trabalho pude conhecer as redes de sensores sem fio, e um sistema operacional diferente dos convêncionais. É muito prazeroso poder, ao mesmo tempo, estudar e desenvolver novidades. Foi interessante perceber que na prática temos de tomar cuidado com questões que às vezes na teoria são deixadas de lado. Por exemplo, o caso do \textit{overhead} no algoritmo de \textit{Heap} dos escalonadores. 
+%
+%Este trabalho ajudou na minha decisão de seguir carreira acadêmica. Ainda estou tendo a oportunidade de pesquisar em uma área pouco explorada no meu deparatamento.
+
+%----------------------------------------------------------------------------------------------------
+\bibliographystyle{unsrt}
+\bibliography{ic}
+\end{document}

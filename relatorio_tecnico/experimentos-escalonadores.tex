@@ -1,0 +1,35 @@
+\subsection{Experimentos com o escalonador de tarefas padrão}
+Antes de começar a desenvolver outros escalonadores de tarefas, foi feito um experimento com o escalonador 
+padrão que utiliza a política \textit{First in, First Out}.
+Para medir a complexidade na prática, foi desenvolvida uma aplicação de teste. Nela cada tarefa executa um loop de 65000
+iterações, fazendo uma simples multiplicação em cada iteração. O número de tarefas variou entre 20, 50 e 100.
+Na tabela a seguir pode-se ver o tempo de execução em microsegundos:
+\begin{center}
+    \begin{tabular}{ | l | l | l | l | p{5cm} |}
+    \hline
+    Escalonador              & 20 Tarefas & 50 Tarefas & 100 Tarefas \\ \hline
+    Escalonador Padrão       & 1366 & 1849 & 2652 \\ \hline
+    \end{tabular}
+\end{center}
+
+%---------------------------------
+\subsection{Experimentos com o escalonador com prioridades}
+Para avaliar o desempenho com o escalonador com prioridades foi desenvolvida a mesma aplicação de teste,
+onde cada tarefa executa um loop de 65000 iterações, fazendo uma simples multiplicação em cada iteração. 
+O número de tarefas variou entre 20, 50 e 100.
+Na tabela a seguir pode-se ver o tempo de execução em microsegundos:
+\begin{center}
+    \begin{tabular}{ | l | l | l | l | p{5cm} |}
+    \hline
+    Escalonador              & 20 Tarefas & 50 Tarefas & 100 Tarefas \\ \hline
+    Escalonador Padrão       & 1366 & 1849 & 2652 \\ \hline 
+    Fila, sem envelhecimento & 1733 & 4660 & 13721 \\ \hline 
+    Heap, sem envelhecimento & 2603 & 4308 & 7486 \\ \hline
+    Fila, com envelhecimento & 2278 & 7887 & 26066 \\ \hline
+    Heap, com envelhecimento & 2665 & 4510 & 7887 \\ \hline
+    \end{tabular}
+\end{center}
+
+Podemos perceber que, para um número pequeno de tarefas, a fila é mais eficiente que a heap. Isso acontece pois
+não é compensado o \textit{overhead} do algoritmo da heap.
+

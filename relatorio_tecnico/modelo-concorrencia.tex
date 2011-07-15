@@ -1,0 +1,36 @@
+O TinyOS define o conceito de {\em tasks} (tarefas) como mecanismo central para
+lidar com as questões de concorrência nas aplicações. 
+Tarefas têm duas propriedades importantes. Elas não são preemptivas entre si, e são
+executadas de forma adiada. Isso significa que ao postar uma tarefa, o fluxo de execução continua,
+sem desvio, e ela só será processada mais tarde. 
+Na definição básica do TinyOS, as tarefas não recebem parâmetros e não retornam resultados. 
+
+O TinyOS minimiza os problemas clássicos de concorrência garantindo que qualquer possível condição de
+corrida gerada a partir de tratadores de interrupção, seja detectada em tempo de compilação. 
+Para que isso seja possível, o código em nesC é dividido em dois tipos:
+\begin{description}
+    \item[Código Assíncrono] Código alcançável a partir de pelo menos um tratador de interrupção.
+    \item[Código Síncrono] Código alcançável somente a partir de tarefas.
+\end{description}
+
+Eventos e comandos que podem ser sinalizados ou chamados a partir de um tratador de interrupção são códigos assíncronos.
+Eles podem interromper a execução de tratadores de eventos, comandos e \textit{tasks}. 
+Por isso devem ser marcados como \textit{async} no código fonte. 
+Condições de corrida podem ocorrer quando esses trechos de código acessam variáveis compartilhadas.
+Para contornar isso, deve-se usar o comando \textit{atomic} ou \textit{power locks}.
+
+O comando \textit{atomic} garante exclusão mútua desabilitando interrupções. Dois fatos
+importantes surgem com o seu uso, primeiro a ativação e desativação de interrupções consome ciclos de CPU. Segundo,
+longos trechos atômicos podem atrasar outras interrupções, portanto é preciso tomar cuidado ao chamar outros componentes
+a partir desses blocos.
+
+Algumas vezes é preciso usar um determinado hardware por um longo tempo, sem compartilhá-lo. 
+Como a necessidade de atomicidade não está no processador e sim no hardware, 
+pode-se conceder sua exclusividade a somente um usuário (componente) através de
+\textit{Power locks}. Para isso, primeiro é feito um pedido através de um comando, depois quando o recurso desejado
+estiver disponível, um evento é sinalizado. Assim não há espera ocupada (similar ao mecanismo de semáforos). 
+Existe a possibilidade de requisição imediata. 
+Nesse caso nenhum evento será sinalizado: se o recurso não estiver locado por outro usuário (componente), ele será
+imediatamente cedido, caso contrário, o comando retornará falso. 
+~\cite[Cap.11]{LevisGay/09}.
+

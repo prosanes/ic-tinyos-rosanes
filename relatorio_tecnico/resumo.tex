@@ -1,0 +1,18 @@
+Redes de Sensores Sem Fio (RSSFs) são formadas por pequenos dispositivos de sensoreamento, com 
+espaço de memória e capacidade de processamento limitados, fonte de energia esgotável e comunicação sem fio.
+O sistema operacional mais usado na programação desses dispositivos é o TinyOS, um sistema leve, 
+projetado especialmente para consumir pouca energia, um dos requisitos mais importante para RSSFs. 
+%O modelo  programação adotado pelo TinyOS é orientada a componentes (para facilitar a
+%reutilização de código) e basedo em eventos (para economizar memória), 
+O modelo de programação adotado pelo TinyOS prioriza o atendimento de interrupções.
+Em função disso, as operações são normalmente divididas em duas fases: uma para envio
+do comando, e outra para o tratamento da resposta (evento sinalizado via interrupção). 
+Esse modelo de programação, baseado em eventos, quebra o fluxo de execução normal, dificultando a
+tarefa dos desenvolvedores de aplicações. 
+Para que os tratadores de eventos (interrupções) sejam curtos, tarefas maiores são
+postergadas para execução futura e, para evitar concorrência entre elas,
+as tarefas são executadas em sequência, uma após a outra (i.e., uma tarefa só é iniciada após a tarefa
+anterior ser concluída).  
+O objetivo deste trabalho é propor e implementar políticas alternativas de escalonamento de tarefas
+para o TinyOS visando a construção de abstrações de programação de nível mais alto que 
+facilitem o desenvolvimento de aplicações nessa área.

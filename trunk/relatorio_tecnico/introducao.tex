@@ -1,0 +1,61 @@
+Redes de Sensores Sem Fio (RSSFs) caracterizam-se pela formação de aglomerados de pequenos 
+dispositivos que, atuando em conjunto, permitem monitorar ambientes físicos ou processos de 
+produção com elevado grau de precisão. O desenvolvimento de aplicações que permitam explorar 
+o uso dessas redes requer o estudo e a experimentação de protocolos, algoritmos e modelos de 
+programação que se adequem às suas características e exigências particulares, entre elas, uso
+de recursos limitados, adaptação dinâmica das aplicações, e a necessidade de integração com
+outras redes, como a Internet.
+
+Sistemas projetados para os dispositivos que formam as redes de sensores devem lidar apropriadamente
+com as restrições e características particulares desses ambientes. 
+A arquitetura adotada pelo TinyOS~\cite{tinyos/00} --- um dos sistemas operacionais mais usados
+na pesquisa nessa área --- prioriza fortemente o tratamento dessas restrições em 
+detrimento da simplicidade oferecida para o desenvolvimento de aplicações. 
+A linguagem de programação usada é o nesC~\cite{nesc/03}, uma extensão de C que provê um modelo de programação baseado
+em componentes e orietado a eventos.
+%que provê baixo consumo de memória, optimizações, e previne condições de corrida.
+%^^ Destacar depois em caracteristicas de nesC
+Para lidar com as diversas operações de entrada e saída, o TinyOS utiliza um modelo de 
+execução em duas fases, evitando bloqueios e, consequentemente, armazenamento de estados. 
+A primeira fase da operação é um comando que pede ao hardware a execução de um serviço 
+(ex.: sensoreamento). Este comando retorna imediatamente dando continuidade à execução. Quando o
+serviço é terminado, o hardware envia uma interrupção, sinalizada como um evento pelo TinyOS. 
+Então, o tratador do evento recebe as informações (ex.: valor sensoreado) e trata/processa essas informações conforme programado. 
+O problema gerado por essa abordagem é a falta da visão de um fluxo contínuo de execução 
+na perspectiva do programador. 
+
+O modelo de concorrência divide o código em dois tipos: assíncrono e síncrono. 
+Um código assíncrono pode ser alcançável a partir de pelo menos
+um tratador de interrupção. Em função disso, a execução desses trechos do programa pode ser interrompida
+a qualquer momento e é necessário tratar possíveis condições de corrida.
+Um código síncrono é alcançável somente a partir de tarefas (\textit{tasks}) que são 
+procedimentos adiados (postergados). Tarefas executam até terminar (não existe concorrência entre elas), 
+por isso as condições de corrida, neste contexto, são evitadas.  
+As tarefas são todas escalonadas por um componente do TinyOS que usa uma política padrão de escalonamento 
+do tipo \textit{First-in First-out}~\cite{LevisGay/09}.
+
+Com o objetivo de oferecer maior flexibilidade aos desenvolvedores de aplicações, 
+a versão mais atual do TinyOS (versão 2.1.x) trouxe novas facilidades.
+Uma delas é a possibilidade de substituir o componente de escalonamento de tarefas
+para implementar diferentes políticas de escalonamento~\cite{TEP106}.
+A outra é a possibilidade de usar o modelo de programação multithreading,
+ mais conhecido pelos desenvolvedores de aplicações e que pode
+ser usado como alternativa para lidar com as dificuldades da programação orientada a eventos.
+
+Neste trabalho avaliamos essas novas facilidades do TinyOS e propomos extensões que visam oferecer facilidade adicionais
+para os desenvolvedores de aplicações.
+Inicialmente propusemos novos escalonadores de tarefas, implementando diferentes políticas de escalonamento por
+prioridade e avaliamos o modelo de multithreading oferecido, comparando diferentes formas de implementação
+de uma aplicação básica e o custo da gerência de threads. Em seguida, tomando como base o modelo multithreading
+oferecido, projetamos um mecanismo de gerência cooperativa de tarefas para o TinyOS, visando 
+uma solução alternativa entre o modelo de escalonamento de tarefas que executam até terminar 
+e evitam condições de corrida, e o modelo de execução alternada entre as tarefas 
+que permite maior flexibilidade durante a execução, mas com custo de gerência alto.
+
+O modelo de gerência cooperativa de tarefas é uma solução viável para as redes de sensores sem fios devido simplicidade
+do hardware. Como os processadores têm somente um núcleo, e não possuem tecnologia hyperthreading, não é possível 
+existir duas unidades de execução rodando em paralelo. Portanto uma gerência cooperativa de tarefas seria uma solução
+menos custosa, por eliminar a necessidade de mecânismos de sincronização, e diminuir o número de trocas de contexto.
+
+%!!!Acrescentar organização do resto do texto!!!
+

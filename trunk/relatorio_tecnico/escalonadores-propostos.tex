@@ -1,0 +1,81 @@
+Nesta seção apresentamos o projeto e as etapas de implementação de novos escalonadores
+de tarefas para o TinyOS.
+Implementamos três propostas: escalonador EDF (\textit{Earliest Deadline First}), escalonador com prioridades,  
+e escalonador multi-nível.
+
+%-----------------------------
+\subsection{Escalonador EDF (\textit{Earliest Deadline First})}\label{escalonadoredf}
+Este escalonador \footnote{O \cite{TEP106} disponibiliza um protótipo} aceita tarefas com deadline e 
+elege aquelas com menor \textit{deadline} para executar. A interface usada para criar
+esse tipo de tarefas é \textit{TaskDeadline}. O \textit{deadline} é passado por parâmetro pela função \textit{postTask}.
+As tarefas básicas (\textit{TaskBasic}) também são aceitas, como recomendado pelo TEP 106\cite{TEP106}.
+
+Em contraste, o escalonador não segue outra recomendação: não elimina a possibilidade de 
+\textit{starvation} pois as tarefas
+básicas só são atendidas quando não há nenhuma tarefa com \textit{deadline} esperando para executar. 
+A fila de prioridades é implementada da mesma forma que a do escalonador 
+padrão\ref{escalonadorpadrao}, a única mudança está na inserção. Para
+inserir, a fila é percorrida do começo até o fim, procurando-se o local exato de inserção.
+Portanto, o custo de inserir é $\bigcirc(n)$, e o custo de retirar da fila é $\bigcirc(1)$. 
+%Uma possível modificação seria utilizar uma \textit{heap}, mudando o custo de inserção  de 
+%retirada para $\bigcirc(\logn)$.
+
+%!!!explicar esse trecho melhor depois!!!
+%A princípio tive problemas com o componente \textit{Counter32khzC}, 
+%pois ele não existe para  a plataforma \textit{micaz}. Para poder compilar o
+%escalonador foi preciso retirá-lo. Ele era usado para calcular a hora atual, e somar ao deadline. 
+%Sem esse componente, temos um escalonador de prioridades (mínimo). 
+
+%-----------------------------
+\subsection{Escalonador com prioridades}\label{escalonadorprioridade}
+Desenvolvemos um escalonador onde é possível estabelecer prioridades para as tarefas. 
+A prioridade é passada como parâmetro através 
+do comando \textit{postTask}. Quanto menor o número passado, maior a preferência da tarefa, sendo 0 a
+mais prioritária e 254 a menos prioritária.
+As \textit{Tasks} básicas também são aceitas, e são consideradas as tarefas com menor prioridade.
+
+Foram encontrados dois problemas de \textit{starvation}. O primeiro relacionado com as tarefas básicas,
+onde elas só seriam atendidas caso não houvesse nenhuma tarefa com prioridade na fila. Para resolver isso, foi definido um
+limite máximo de tarefas prioritárias que podem ser atendidas em sequência. Caso esse limite seja excedido, uma tarefa
+básica é atendida. O segundo é relacionado às próprias tarefas com prioridade. 
+Se entrar constantemente \textit{tasks} com alta
+prioridade, é possível que as de baixa prioridade não sejam atendidas. A solução se deu através do envelhecimento de
+tarefas. Ou seja, \textit{tasks} que ficam muito tempo na fila, têm sua importância aumentada.
+
+Dois tipos de estrutura de dados foram usadas para a organização das tarefas, uma fila comum e uma \textit{heap}. Com
+isso, totalizou-se quatro diferentes versões do escalonador:
+\begin{enumerate}
+    \item Fila comum sem envelhecimento
+    \item Fila comum com envelhecimento
+    \item Heap sem envelhecimento
+    \item Heap com envelhecimento
+\end{enumerate}
+A seguir uma tabela com a complexidade de inserção e remoção para cada escalonador:
+\begin{center}
+    \begin{tabular}{ | l | l | l | l | p{5cm} |}
+    \hline
+    Escalonador & Inserção & Remoção \\ \hline
+    Fila, sem envelhecimento & $\bigcirc(n)$ & $\bigcirc(1)$ \\ \hline 
+    Heap, sem envelhecimento & $\bigcirc(\log(n))$ & $\bigcirc(\log(n))$ \\ \hline
+    Fila, com envelhecimento & $\bigcirc(n)$ & $\bigcirc(n)$ \\ \hline
+    Heap, com envelhecimento & $\bigcirc(\log(n))$ & $\bigcirc(n)$ \\ \hline
+    \end{tabular}
+\end{center}
+
+%-----------------------------
+\subsection{Escalonador multi-nível}
+No TinyOS, percebe-se uma divisão clara dos tipos de serviços: 
+\begin{description}
+    \item[Rádio] Comunicação sem fio entre diferentes nós da rede através de ondas de rádio.
+    \item[Sensor] Sensoriamento de diferentes características do ambiente.
+    \item[Serial] Comunicação por fio entre um nó e uma estação base (PC).
+    \item[Básica] Outros serviços, como por exemplo temporizador.
+\end{description}
+Por isso, desenvolvemos um escalonador que divide as tarefas de acordo com os tipos definidos acima.
+Cada tipo de tarefa tem sua própria fila com política \textit{First-in First-out}, e as filas mais importantes devem ser
+atendidas por completo para que as outras sejam antendidas.
+
+%!!!detalhar esse trecho melhor depois!!!
+%Definiu-se que a ordem de prioridade seria serial, rádio, sensor e por último básica.
+
+

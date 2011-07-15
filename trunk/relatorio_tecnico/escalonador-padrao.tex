@@ -1,0 +1,95 @@
+O componente responsável por gerenciar e escalonar tarefas no TinyOS é o componente {\em TinySchedulerC}.
+O escalonador padrão adota uma política {\em First-in First-out} para agendar as tarefas. Ele também
+cuida de parte do gerenciamento de energia, colocando a CPU em um estado de baixo consumo quando
+não há nada para ser executado.
+
+O escalonador padrão provê as interfaces \textit{Scheduler} e \textit{TaskBasic}.
+As tarefas se conectam ao escalonador através da interface \textit{TaskBasic}. 
+Ao compilar um programa em nesC, todas tarefas
+básicas viram uma interface desse tipo. Porém, para se diferenciarem é criado um parâmetro na interface
+\footnote{Para mais informações sobre interfaces parametrizadas ver o livro 
+TinyOS Programming\cite[s. 8.3 e 9]{LevisGay/09}.}.
+
+Na versão 2.1.x do TinyOS é possível mudar a política de gerenciamento de tarefas substituindo 
+o escalonador padrão. Qualquer novo escalonador tem de
+aceitar a interface de tarefa padrão, e garantir a execução de todas as tarefas 
+(ausência de {\em starvation})~\cite{TEP106}.
+
+Para alterar o escalonador basta adicionar uma configuração com o nome {\em TinySchedulerC} 
+no diretório da aplicação e amarrá-la ao componente responsável pela implementação da aplicação. 
+Dentro desta configuração, amarra-se a interface \textit{Scheduler} 
+à implementação do escalonador~\cite{TEP106}, como mostra o exemplo abaixo:
+
+\begin{lstlisting}
+configuration TinySchedulerC {
+    provides interface Scheduler; }
+implementation  {
+    components SchedulerDeadlineP;
+    Scheduler = SchedulerDeadlineP; }
+\end{lstlisting}
+
+É preciso também criar a interface para o novo tipo de tarefa, com o comando \textit{postTask} e o evento
+\textit{runTask}. Por exemplo:
+\begin{lstlisting}
+interface TaskDeadline<precision_tag> { 
+    async command error_t postTask(uint32_t deadline);
+    event void runTask(); }
+\end{lstlisting}
+
+Por último, deve-se amarrar a interface da tarefa com a interface do escalonador. Por exemplo:
+\begin{lstlisting}
+configuration TinySchedulerC {
+    provides interface Scheduler;
+    provides interface TaskBasic[uint8_t id];
+    provides interface TaskDeadline<TMilli>[uint8_t id];
+}
+implementation  {
+    components SchedulerDeadlineP;
+    ...
+    Scheduler = SchedulerDeadlineP;
+    TaskBasic = Sched; 
+    TaskDeadline = Sched;
+}
+\end{lstlisting}
+
+
+Para que o escalonador funcione corretamente no simulador TOSSIM é preciso adicionar funções que lidam com eventos no
+simulador. Essas funções foram retiradas do arquivo
+\textit{opt/tinyos-2.1.1/tos/lib/tossim/SimSchedulerBasicP.nc}.
+Primeiro é preciso adicionar ao componente \textit{Scheduler} o código abaixo:
+\begin{lstlisting}[frame=single]
+  bool sim_scheduler_event_pending = FALSE;
+  sim_event_t sim_scheduler_event;
+  int sim_config_task_latency() {return 100;}
+  void sim_scheduler_submit_event() {
+    if (sim_scheduler_event_pending == FALSE) {
+      sim_scheduler_event.time = sim_time() + sim_config_task_latency();
+      sim_queue_insert(&sim_scheduler_event);
+      sim_scheduler_event_pending = TRUE;
+    }
+  }
+  void sim_scheduler_event_handle(sim_event_t* e) {
+    sim_scheduler_event_pending = FALSE;
+    if (call Scheduler.runNextTask()) {
+      sim_scheduler_submit_event();
+    }
+  }
+  void sim_scheduler_event_init(sim_event_t* e) {
+    e->mote = sim_node();
+    e->force = 0;
+    e->data = NULL;
+    e->handle = sim_scheduler_event_handle;
+    e->cleanup = sim_queue_cleanup_none;
+  }
+\end{lstlisting}
+
+Depois, no comando \textit{Scheduler.init()} deve-se adicionar:
+\begin{lstlisting}[frame=single]
+  sim_scheduler_event_pending = FALSE;
+  sim_scheduler_event_init(&sim_scheduler_event);
+\end{lstlisting}
+E, por último, no comando \textit{Scheduler.postTask()}, deve-se adicionar:
+\begin{lstlisting}[frame=single]
+  sim_scheduler_submit_event();
+\end{lstlisting}
+

@@ -1,0 +1,42 @@
+%!!!explicar esse trecho melhor depois!!!
+%Os conceitos já utilizados/implementados por threads que ajudarão na criação de uma interface do corotinas são: 
+%Chamadas bloqueantes ao sistema, re-aproveitamento dos serviçõs oferecidos, bloco de controle de threads (TCB), e
+%a da troca de contexto.
+
+\textit{TOSThreads} permite programação com threads no TinyOS sem violar ou limitar o modelo de concorrência do
+sistema. O TinyOS executa em uma única thread --- no de kernel --- enquanto a aplicação executa 
+em uma ou mais threads --- nível de usuário.
+Em termos de escalonamento, o kernel tem prioridade máxima, ou seja, a aplicação só executa quando o núcleo do sistema
+está ocioso. Ele é responsável pelo escalonamento de tarefas e execução das chamadas de sistemas. 
+
+%!!!explicar esse trecho melhor depois!!!
+%A interface entre as threads de usuário e de kernel é feito através de chamadas de sistema bloqueantes. Essas
+%chamadas são implementadas aproveitando os serviços já disponíveis do TinyOS. 
+%São responsáveis por manter o estado do serviço 
+%\textit{split-phase} que será usado, bloquear a thread que a invocou e acordar a thread do kernel.
+
+Três tipos de contextos de execução passam a existir: tarefas, interrupções e threads. Tarefas e interrupções podem
+interromper threads de aplicação, mas não o contrário. Threads tem preempção entre elas, 
+de modo que é necessário o uso de primitivas de sincronização. 
+As opções fornecidas são \textit{mutex}, semáforos, barreiras, variáveis de condição, e contador
+bloqueante. Esta última foi desenvolvida especialmente para o TinyOS. Seu uso se dá de forma que a thread fica bloqueada
+até o contador atingir um número arbitrário, enquanto outras threads podem incrementar ou decrementar esta variável
+através de uma interface específica.
+%!!!explicar esse trecho melhor depois!!!
+%O TinyOS retoma o controle sobre a aplicação de dois modos diferentes. No primeiro, uma aplicação faz uma chamada de
+%sistema que posta uma tarefa para processar o serviço. No segundo modo, um manipulador de interrupção posta uma tarefa.
+%Porém, neste caso o TinyOS só acorda depois de terminada a execução da interrupção.
+O escalonador de threads utiliza uma política \textit{Round-Robin} com um tempo de 5 milisegundos. É ele que oferece
+toda a interface para manipulação de threads, como pausar, criar e destruir. 
+%!!!explicar esse trecho melhor depois!!!
+%É interessante notar que o escalonador não
+%existe em um contexto de execução específico, seu contexto depende de quem utilizou sua interface.
+
+As threads podem ser estáticas ou dinâmicas. A diferença está no momento de criação da pilha e do bloco de controle da
+thread. Nas threads estáticas a criação é feita em tempo de compilação, enquanto nas threads dinâmicas 
+a criação é feita em tempo de execução. O bloco de controle, também chamado de
+\textit{Thread Control Block} (TCB), contém informações essenciais da thread, como seu identificador, seu estado de
+execução, o valor dos registradores (para troca de contexto), entre outras\cite{TEP134}.
+A troca de contexto é feita por códigos específicos para cada plataforma. 
+
+

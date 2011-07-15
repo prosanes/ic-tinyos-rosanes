@@ -1,0 +1,20 @@
+As redes de sensores sem fio podem ser aplicadas em diversas áreas, por exemplo, monitoramento de oscilações 
+e movimentos de pontes, observação de vulcões ativos, previsão de incêndio em florestas, entre outras. 
+Muitas dessas aplicações podem atingir alta complexidade, exigindo a construção de algoritmos robustos, 
+como roteamento de pacotes diferenciado.
+Os escalonadores desenvolvidos neste trabalho poderão ajudar os desenvolvedores dessas aplicações complexas,
+oferecendo maior flexibilidade no projeto das soluções, como, por exemplo, 
+a possibilidade de priorizar certas atividades da aplicação (comunicação via rádio ou serial, sensoriamento, etc.).
+Porém é preciso analisar se o ganho em flexibilidade, oferecido pelo escalonador, irá compensar o
+\textit{overhead} gerado.
+Pretendemos realizar ainda outros experimentos com os escalonadores desenvolvidos, considerando diferentes
+tipos de aplicações. 
+
+Sem um fluxo contínuo de execução, sobre a perspectiva do programador, as aplicações grandes ficam difíceis de
+implementar e entender. O modelo de \textit{threads} oferecido no 
+TinyOS 2.1.X\cite{TEP134} facilita este problema. Entretanto, por ser um modelo preemptivo, o custo de
+gerência das threads pode implicar em queda de desempenho das aplicações. 
+Com a implementação de um mecanismo de cooperação baseado em co-rotinas pretendemos
+oferecer uma alternativa a mais para o programador.
+
+

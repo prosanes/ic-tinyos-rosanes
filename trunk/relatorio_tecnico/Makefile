@@ -1,4 +1,4 @@
-relatorio.pdf: relatorio.tex ic.bib
+relatorio.pdf: relatorio.tex ic.bib srcs/BlinkC.nc srcs/BlinkAppC.nc srcs/aplicacaoTesteAppC.nc srcs/aplicacaoTesteC.nc
 	pdflatex relatorio.tex
 	bibtex relatorio.aux
 	pdflatex relatorio.tex

@@ -2,6 +2,7 @@
 \usepackage[utf8]{inputenc}
 \usepackage[portuguese,brazil]{babel}
 \usepackage{ae}
+\usepackage{verbatim}
 
 \usepackage[pdftex]{graphicx} % Exposta para pdf e aceita figuras
 %\usepackage{indentfirst} % Identa primeiro paragrafo
@@ -26,10 +27,15 @@ tabsize=2,                  % sets default tabsize to 2 spaces
 %captionpos=b,                   % sets the caption-position to bottom
 %breaklines=true,                % sets automatic line breaking
 %breakatwhitespace=false,        % sets if automatic breaks should only happen at whitespace
-title=\lstname,                 % show the filename of files included with \lstinputlisting;
-% also try caption instead of title
+%title=\caption,                 % show the filename of files included with \lstinputlisting;
+                                % also try caption instead of title
 escapeinside={\%*}{*)},         % if you want to add a comment within your code
-morekeywords={*,...},            % if you want to add more keywords to the set
+morekeywords={module,uses,interface,implementation,
+                task,event,call,post,configuration,
+                components,as,async,command,error_t,
+                atomic,uint8_t,uint16_t,uint32_t,
+                int8_t,int16_t,int32_t,
+                signal,generic,provides},            % if you want to add more keywords to the set
 belowskip=0pt
 }
 
@@ -142,37 +148,39 @@ menos custosa, por eliminar a necessidade de mecânismos de sincronização, e d
 
 %----------------------------------------------------------------------------------------------------
 \section{Conceitos Básicos}\label{teoria}
-a
 
 \subsection{Rede de Sensores Sem Fio, TinyOS e nesC}
 Uma rede de sensores sem fio (RSSF) é um conjunto de dispositivos formando uma rede de comunicação \textit{ad-hoc}. Cada
 sensor tem a capacidade de monitorar diversas propriedades físicas, como intensidade luminosa, temperatura, aceleração,
 entre outras. Através de troca de mensagens, esses dispositivos podem unir todas essas informações para detectar um evento
 importante no local, como um incêndio. Essa conclusão é então encaminhada para um nó com maior capacidade computacional,
-conhecido como estação base. Este nó decidir uma ação, ou enviar a informação pela internet. Esses sensores são usados para 
-monitorar ambientes de difícil acesso, onde uma rede cabeada seria inviável ou custosa.
+conhecido como estação base. Este nó pode decidir uma ação a ser tomada, ou enviar a informação pela internet. Uma RSSF
+é usada para monitorar ambientes de difícil acesso, onde uma rede cabeada seria inviável ou custosa.
 Alguns exemplos reais do uso de RRSF são: monitoramento da ponte Golden Gate em São Francisco, e dos vulcões Reventador e Tungurahua no
 Equador~\cite{LevisGay/09}. 
 Além da necessidade de serem sem fio, a outra principal característica dos sensores é o baixo consumo de energia. Para
 evitar manutenções da rede, em ambientes de difícil acesso.
 
-Para aumentar o tempo de vida das baterias, o hardware destes dispositivos tende a ser recursos computacionais
-limitados. Ao invés de utilizar CPUs, são usados microcontroladores de 8 ou 16 bits, com relógios na ordem de 10
+Para aumentar o tempo de vida das baterias, o hardware destes dispositivos tende a ter recursos computacionais
+limitados. Ao invés de utilizar CPUs, são usados microcontroladores de 8 ou 16 bits, com frequências na ordem de 10
 megahertz. Para armazenar o código da aplicação é utilizada uma pequena memória flash, da ordem de 100kB. E para as
 variáveis existe uma memória RAM, da ordem de 10kB. Os circuitos de rádio também têm uma capacidade reduzida de
 transferência, da ordem de kilobytes por segundos~\cite{LevisGay/09}.
 Aliado ao hardware, o software também deve ser voltado para o baixo consumo de energia e de memória.
 
-O TinyOS é o sistema operacional mais usado para auxiliar os programadores a desenvolverem tais aplicativos. Junto com a
+O TinyOS é o sistema operacional mais usado para auxiliar os programadores a desenvolverem aplicativos de baixo consumo. Junto com a
 linguagem de programação nesC, é provido um modelo de programação baseado em componentes e orientado a eventos.
 Os componentes são pedaços de código reutilizáveis, onde são definidas claramente suas dependências e os serviços
-oferecidos. É através da conexão de diversos componentes que o sistema é montado.
-Já o modelo de programação orientado a eventos permite que o TinyOS rode somente uma aplicação, com uma linha de
-execução, sem a necessidade de ações bloqueantes. Todas as operações de entrada e saída são realizadas em duas fases, ou
-seja, o comando de E/S sinaliza para o hardware o que deve ser feito, e retorna imediatamente, dando continuidade a
-execução. A conclusão da operação é sinalizada através de um evento, que será tratado pela outra fase da operação de E/S.
-O TinyOS também provê um conjunto de abstrações de hardware, como serviços de sensoreamento, comunicação e
-armazenamento.
+oferecidos, por meio de interfaces. É através da conexão (\textit{wiring}) de diversos componentes que o sistema é montado.
+
+Já o modelo de programação orientado a eventos permite que o TinyOS rode uma aplicação, com somente uma linha de
+execução, sem a necessidade de ações bloqueantes. Todas as operações de entrada e saída são realizadas em duas fases.
+Na primeira fase, o comando de E/S sinaliza para o hardware o que deve ser feito, e retorna imediatamente, dando continuidade a
+execução. A conclusão da operação é sinalizada através de um evento, que será tratado pela segunda fase da operação de E/S.
+
+O modelo de programação baseada em compontenes está intimamente ligada à programação orientada a eventos: Um componente
+oferece a interface, implementando os comandos e as sinalizações dos evento relacionandos, enquanto outro componente
+utiliza a esta interface, utilizando os comandos e implementando os tratadores de evento.
 
 Também é implementado o conceito de procedimento postergados, chamados de tarefas, ou \textit{tasks}, no TinyOS. Qualquer
 componentes pode postar uma tarefa, que será atendida pelo escalonador, algum tempo depois, de forma síncrona.  Elas são 
@@ -183,13 +191,69 @@ Por exemplo, um tratador de interrupção deve fazer somente o processamento mí
 de conclusão da operação de E/S. Depois de um curto periodo de tempo, esta terefa será atendida, e sinalizará o evento de 
 forma síncrona.
 
+O TinyOS, assim como qualquer outro sistema operacional, também provê um conjunto de abstrações de hardware, como serviços 
+de sensoreamento, comunicação e armazenamento.
+
+A aplicação \textit{Blink}, no anexo~\ref{a:Blink}, é utilizada para ilustrar estes conceitos básicos. Nesta aplicação, são utilizados
+3 temporizadores, que ligam/desligam os LEDs toda vez que são ativados. Dentre os conceitos explicados acima, temos:
+\begin{itemize}
+\item Definição das dependências através de interfaces --- uses interface Timer<TMilli> as Timer0;
+\item Conexão entre componentes --- components new TimerMilliC() as Timer0; \hfill \\
+        BlinkC.Timer0 -> Timer0;
+\item Chamada a um comando --- call Time0.startPeriodic(250);
+\item Tratador de evento --- event void Timer0.fired()
+\item Definição de tarefas --- task void tarefa()
+\item Postagem de tarefas --- post tarefa();
+\end{itemize}
+% ANEXAR
+
 \subsection{Escalonamento de tarefas}
-a
+As tarefas, por serem procedimentos adiados, necessitam de algoritmos de escalonamento. Estes algoritmos também não
+podem ser preemptivos, devido a natureza das tarefas do TinyOS.
+O algoritmo mais simples, e também o padrão do TinyOS, é o \textit{First-Come, First-Served}, onde as tarefas são
+atendidas segundo a ordem de chegada. Tem um \textit{overhead} mínimo, e não gera \textit{starvation}. Pode ter um tempo de
+resposta alto, se houver uma grande quantidade de tarefas na fila.
+
+Escalonamento utilizando \textit{deadline} é muito usado em sistemas operacionais de tempo real. Neste algoritmo
+a próxima tarefa a ser executada é aquela com menor prazo (\textit{deadline}). As diversas variações deste algoritmo utilizam
+parâmetros como: 
+\begin{itemize}
+    \item Tempo de entrada na fila de prontos.
+    \item Prazo para começar a tarefa.
+    \item Prazo para terminar a tarefa.
+    \item Tempo de processamento.
+    \item Recursos utilizados.
+    \item Prioridade.
+    \item Existência de preempção.
+\end{itemize}
+Porém, o principal parâmetro utilizado pelos algoritmos é a existência ou não de preempção. Caso não exista preempção,
+faz mais sentido utilizarmos, no escalonamento, o prazo para começar a tarefa. Caso exista preempção, o prazo para
+terminar a tarefa é utilizado~\cite{Stallings/04}.
+Um \textit{overhead} bem maior passa a existir, porém o tempo de resposta pode ser aproximadamente estipulado pela
+própria tarefa.
+% !!! Talvez devesse melhorar esta parte !!!
+
+Em um escalonamento de prioridade fixa, cada tarefa indica, no momento de entrada para fila de prontos, sua importância em relação às
+outras tarefas. Nestes algoritmos podemos ter preempção por parcela de tempo, na entrada de outras tarefas, ou não ter preempção. 
+No primeiro tipo, pode existir um \textit{overhead} desnecessário quando o \textit{time-slice} da tarefa atual terminou,
+porém não existe nenhuma outra com prioridade maior. O segundo tipo resolve este problema: Se existe uma ordem de
+tarefas na fila, esta ordem só pode mudar caso uma nova tarefa entre.
+Quando não há preempção, a troca de tarefa só ocorre no final da que está executando.
+Neste escalonamento também há um \textit{overhead} grande, devido a ordenação das tarefas na fila. Também é introduzido
+a possibilidade de \textit{starvation} e um alto tempo de resposta para tarefas de baixa prioridade.
+
+O escalonamento de multi-nível é um caso especial do de prioridade fixa. 
+Cada tarefa determina seu nível de prioridade em tempo de compilação. Onde cada nível de prioridade tem uma fila, com 
+política \textit{First-in First-out}, e as filas mais importantes devem ser atendidas por completo para que outra sejam
+atendidas.
+
+O escalonamento de prioridade dinâmica visa eliminar a possibilidade de \textit{starvation}. Neste caso, a tarefa ainda
+indica sua importância no momento de entrada para fila de prontos. Porém, as tarefas que estão esperando para executar
+aumentam de prioridade toda vez que não são atendidas. Apesar disto aumentar significativamente o \textit{overhead}, o
+\textit{starvation} é eliminado.
 
 \subsection{Multithreading e corotinas}
 a
-\subsubsection{Threads no TinyOS}
-%!!!Será que precisa dessa subsubsection, uma vez que eu vou descrever threads em detalhes a seguir? !!!
 
 %----------------------------------------------
 %!!! Deveria a partir daqui ser uma nova sessão ? !!!
@@ -227,21 +291,22 @@ Tarefas têm duas propriedades importantes. Elas não são preemptivas entre si,
 executadas de forma adiada. Isso significa que ao postar uma tarefa, o fluxo de execução continua,
 sem desvio, e ela só será processada mais tarde. 
 Na definição básica do TinyOS, as tarefas não recebem parâmetros e não retornam resultados. 
-Entretanto é possível fazê-las receber parâmetros criando uma interface e amarrando-a ao componente do escalonador.
 
 O TinyOS minimiza os problemas clássicos de concorrência garantindo que qualquer possível condição de
-corrida seja detectada em tempo de compilação. Para que isso seja possível, o código em nesC é dividido em dois tipos:
+corrida gerada a partir de tratadores de interrupção, seja detectada em tempo de compilação. 
+Para que isso seja possível, o código em nesC é dividido em dois tipos:
 \begin{description}
     \item[Código Assíncrono] Código alcançável a partir de pelo menos um tratador de interrupção.
     \item[Código Síncrono] Código alcançável somente a partir de tarefas.
 \end{description}
 
 Eventos e comandos que podem ser sinalizados ou chamados a partir de um tratador de interrupção são códigos assíncronos.
-Eles podem interromper outros eventos, comandos e \textit{tasks}. Por isso devem ser marcados como \textit{async} no
-código fonte. O problema aparece quando variáveis compartilhadas são acessadas por esse tipo de código. Para contornar
-isso, deve-se usar o comando \textit{atomic} ou \textit{power locks}.
+Eles podem interromper a execução de tratadores de eventos, comandos e \textit{tasks}. 
+Por isso devem ser marcados como \textit{async} no código fonte. 
+Condições de corrida podem ocorrer quando esses trechos de código acessam variáveis compartilhadas.
+Para contornar isso, deve-se usar o comando \textit{atomic} ou \textit{power locks}.
 
-O comando \textit{atomic} permite que um trecho de instruções possa ser executado sem ser interrompido. Dois fatos
+O comando \textit{atomic} garante exclusão mútua desabilitando interrupções. Dois fatos
 importantes surgem com o seu uso, primeiro a ativação e desativação de interrupções consome ciclos de CPU. Segundo,
 longos trechos atômicos podem atrasar outras interrupções, portanto é preciso tomar cuidado ao chamar outros componentes
 a partir desses blocos.
@@ -253,9 +318,8 @@ pode-se conceder sua exclusividade a somente um usuário (componente) através d
 estiver disponível, um evento é sinalizado. Assim não há espera ocupada (similar ao mecanismo de semáforos). 
 Existe a possibilidade de requisição imediata. 
 Nesse caso nenhum evento será sinalizado: se o recurso não estiver locado por outro usuário (componente), ele será
-imediatamente cedido, caso contrário, o comando retornará falso. \textit{Power Locks} têm três sub-componentes: um
-abitrador que gerência as prioridades dos pedidos, um gerênciador de energia e um configurador que ajusta o hardware de
-acordo com as demandas do cliente~\cite[Cap.11]{LevisGay/09}.
+imediatamente cedido, caso contrário, o comando retornará falso. 
+~\cite[Cap.11]{LevisGay/09}.
 
 %----------------------------------------------
 \subsection{Escalonador padrão de tarefas do TinyOS}\label{escalonadorpadrao}
@@ -687,7 +751,7 @@ importantes para o gerenciamento. Os principais são \textit{system/MainC} para 
 \ref{StaticThreadC}. A figura abaixo permite uma melhor visualização. As elipses são interfaces, os retângulos são
 componentes e as setas indicam qual interface liga os dois componentes.
 
-\includegraphics[scale=0.5]{tos-lib-tosthreads-system-ThreadC.png}
+\includegraphics[scale=0.5]{images/tos-lib-tosthreads-system-ThreadC.png}
 
 \paragraph{\textit{chips/atm128/chip\_thread.h}:}
 Antes de expor as funções do escalonador de threads, é importante expor algumas macros de baixo nível que realizam a
@@ -1066,26 +1130,42 @@ gerência das threads pode implicar em queda de desempenho das aplicações.
 Com a implementação de um mecanismo de cooperação baseado em co-rotinas pretendemos
 oferecer uma alternativa a mais para o programador.
 
+%--------------------------------------------------------------------------------------
+\section{Anexos}
+\appendix
+\section{Blink}\label{a:Blink}
+\subsection{BlinkC.nc:}
+\lstinputlisting{srcs/BlinkC.nc}
 
-\subsection{Atividades extras}
-Outras atividades realizadas pelo aluno foram:
-\begin{itemize}
-    \item Participação no evento SBAC-PAD 2010 -- 
-{\em 22nd International Symposium on Computer Architecture and High Performance Computing}.
-    \item Participação no minicurso 
-{\em Redes de sensores sem fio sob a perspectiva do EPOS}~\cite{HoellerFrohlich/10}, 
-apresentado no SBAC-PAD 2010.    
-    \item Participação em seminário do grupo de Redes de Computadores e Sistemas Distribuídos (RCSD)
-do Programa de Pós-Graduação em Informática (PPGI).
-\end{itemize}
+\subsection{BlinkAppC.nc:}
+\lstinputlisting{srcs/BlinkAppC.nc}
 
-\subsection{Avaliação do Bolsista}
-A iniciação científica está sendo uma ótima oportunidade para etender como funciona uma pesquisa. Por meio desse trabalho pude conhecer as redes de sensores sem fio, e um sistema operacional diferente dos convêncionais. É muito prazeroso poder, ao mesmo tempo, estudar e desenvolver novidades. Foi interessante perceber que na prática temos de tomar cuidado com questões que às vezes na teoria são deixadas de lado. Por exemplo, o caso do \textit{overhead} no algoritmo de \textit{Heap} dos escalonadores. 
+\section{Aplicação de Teste do Escalonador com Prioridades}
+\subsection{aplicacaoTesteC.nc:}
+\lstinputlisting{srcs/aplicacaoTesteC.nc}
 
-Este trabalho ajudou na minha decisão de seguir carreira acadêmica. Ainda estou tendo a oportunidade de pesquisar em uma área pouco explorada no meu deparatamento.
+\subsection{aplicacaoTesteAppC.nc:}
+\lstinputlisting{srcs/aplicacaoTesteAppC.nc}
+
+
+%\subsection{Atividades extras}
+%Outras atividades realizadas pelo aluno foram:
+%\begin{itemize}
+%    \item Participação no evento SBAC-PAD 2010 -- 
+%{\em 22nd International Symposium on Computer Architecture and High Performance Computing}.
+%    \item Participação no minicurso 
+%{\em Redes de sensores sem fio sob a perspectiva do EPOS}~\cite{HoellerFrohlich/10}, 
+%apresentado no SBAC-PAD 2010.    
+%    \item Participação em seminário do grupo de Redes de Computadores e Sistemas Distribuídos (RCSD)
+%do Programa de Pós-Graduação em Informática (PPGI).
+%\end{itemize}
+
+%\subsection{Avaliação do Bolsista}
+%A iniciação científica está sendo uma ótima oportunidade para etender como funciona uma pesquisa. Por meio desse trabalho pude conhecer as redes de sensores sem fio, e um sistema operacional diferente dos convêncionais. É muito prazeroso poder, ao mesmo tempo, estudar e desenvolver novidades. Foi interessante perceber que na prática temos de tomar cuidado com questões que às vezes na teoria são deixadas de lado. Por exemplo, o caso do \textit{overhead} no algoritmo de \textit{Heap} dos escalonadores. 
+%
+%Este trabalho ajudou na minha decisão de seguir carreira acadêmica. Ainda estou tendo a oportunidade de pesquisar em uma área pouco explorada no meu deparatamento.
 
 %----------------------------------------------------------------------------------------------------
-%\bibliographystyle{alpha}
 \bibliographystyle{unsrt}
 \bibliography{ic}
 \end{document}

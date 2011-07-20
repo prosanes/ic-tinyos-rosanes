@@ -1,4 +1,4 @@
-O modelo que decidimos implementas foi um descrito por Ana Moura em sua tese de doutorado\cite[s. 6.2]{Moura/04}.
+O modelo que decidimos implementar foi um descrito por Ana Moura em sua tese de doutorado\cite[s. 6.2]{Moura/04}.
 Neste modelo existe uma co-rotina principal que é responsável por escalonar as outras co-rotinas.
 
 Nossa implementação utilizou como base a extensão \textit{TOSThreads}, vista na seção \ref{TOSThreads}. O primeiro passo
@@ -48,7 +48,7 @@ async command error_t ThreadScheduler.brieflyInterruptCurrentThread() {
 
 \end{lstlisting}
 
-Uma vez excluída a preempção, o proxímo passo foi modificar a interface da thread para permitir passagem de controle ao
+Uma vez excluída a preempção, o próximo passo foi modificar a interface da thread para permitir passagem de controle ao
 escalonador. Para isso, foi criado o comando \textit{yield()}. É importante notar que este comando pode ser chamado em 
 qualquer ponto do programa, porém só deve ser chamado dentro da thread ao qual o comando se refere.
 \begin{lstlisting}

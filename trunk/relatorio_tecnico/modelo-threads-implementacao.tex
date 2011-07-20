@@ -1,9 +1,9 @@
-A seguir descrevemos detalhes da implementação do \textit{TOSThread}. Mostraremos a organização dos diretório e os
+A seguir descrevemos detalhes da implementação do \textit{TOSThread}. Mostraremos a organização dos diretórios e os
 códigos fonte mais importantes.
 
 \paragraph{Organização dos diretórios:}
 O diretório raiz do \textit{TOSThread} é \textit{/opt/tinyos-2.1.1/tos/lib/tosthreads/}.
-Abaixo descrevo sua estrutura básica de diretórios e as respectivas descrições\footnote{Todos os arquivos serão referenciados a partir do diretório
+Abaixo descrevo sua estrutura básica de subdiretórios e as respectivas descrições\footnote{Todos os arquivos serão referenciados a partir do diretório
 raiz \textit{/opt/tinyos-2.1.1/tos/lib/tosthreads/}. i.e. \textit{types/thread.h}}:
 \begin{description}
 \setlength{\itemsep}{0.2pt}
@@ -39,7 +39,7 @@ implementation {
         atomic signal ThreadSchedulerBoot.booted();}
 }
 \end{lstlisting}
-O escalonador de threads, implementado em \textit{TinyThreadSchedulerP.nc}, encapsula a atual unidade de execução
+O escalonador de threads, implementado em \textit{TinyThreadSchedulerP.nc} encapsula a atual linha de execução
 como a thread do kernel. A partir de então, o curso normal de inicialização é executado. 
 \begin{lstlisting}
 event void ThreadSchedulerBoot.booted() {
@@ -102,10 +102,14 @@ respectivos códigos.
 Estados que uma thread pode assumir, como ativo, inativo, pronto e suspenso.
 \begin{lstlisting}
 enum {
-    TOSTHREAD_STATE_INACTIVE = 0,  //This thread is inactive and cannot be run until started
-    TOSTHREAD_STATE_ACTIVE = 1,  //This thread is currently running on the cpu
-    TOSTHREAD_STATE_READY = 2,  //This thread is not currently running, but is not blocked and has work to do 
-    TOSTHREAD_STATE_SUSPENDED = 3,  //This thread has been suspended by a system call (i.e. blocked)
+    TOSTHREAD_STATE_INACTIVE = 0,  //This thread is inactive and 
+                                   //cannot be run until started
+    TOSTHREAD_STATE_ACTIVE = 1,    //This thread is currently running 
+                                   //on the cpu
+    TOSTHREAD_STATE_READY = 2,     //This thread is not currently running, 
+                                   //but is not blocked and has work to do 
+    TOSTHREAD_STATE_SUSPENDED = 3, //This thread has been suspended by a 
+                                   //system call (i.e. blocked)
 };
 \end{lstlisting}
 Constantes que controlam a quantidade máxima de threads, e o periodo de preempção.
@@ -130,7 +134,8 @@ uint8_t joinedOnMe[(TOSTHREAD_MAX_NUM_THREADS - 1) / 8 + 1];
 void (*start_ptr)(void*);             
     //Pointer to the start function of this thread
 void* start_arg_ptr;                  
-    //Pointer to the argument passed as a parameter to the start function of this thread
+    //Pointer to the argument passed as a parameter to the start 
+    //function of this thread
 syscall_t* syscall;                   
     //Pointer to an instance of a system call
 thread_regs_t regs;                   
@@ -142,18 +147,20 @@ ponteiro para função que a implementa.
 \begin{lstlisting}
 struct syscall {
 struct syscall* next_call;        
-    //Pointer to next system call for use in syscall queues when blocking on them
+    //Pointer to next system call for use in syscall queues when 
+    //blocking on them
 syscall_id_t id;                  
-    //client id of this system call for the particular syscall_queue within which it is being held
+    //client id of this system call for the particular syscall_queue 
+    //within which it is being held
 thread_t* thread;                 
     //Pointer back to the thread with which this system call is associated
 void (*syscall_ptr)(struct syscall*);   
     //Pointer to the the function that actually performs the system call
 void* params;                     
-    //Pointer to a set of parameters passed to the system call once it is running in task context};
+    //Pointer to a set of parameters passed to the system call once it is 
+    //running in task context
+};
 \end{lstlisting}
-Também existe uma estrutura chamada \textit{init\_block} usada para threads dinâmicas.
-%!!!Não entendi este init_block direito!!!
 
 \paragraph{\textit{interfaces/Thread.nc}:} Contém os comandos de gerênciamento da thread e um evento para executá-la.
 \begin{lstlisting}
@@ -250,8 +257,6 @@ error_t init(uint8_t id, void* arg) {
     return ecombine(r1, r2);                                              
 }  
 
-event void 
-
 event void ThreadFunction.signalThreadRun[uint8_t id](void *arg) {
     signal Thread.run[id](arg);
 }
@@ -276,7 +281,7 @@ command error_t Thread.start[uint8_t id](void* arg) {
 
 \paragraph{\textit{system/ThreadC.nc}:}
 Esta configuração é a ``interface'' da thread com o usuário e com o escalonador. Primeiramente, é ela que prove a 
-interface \textit{interfaces/Thread.nc}, por tanto o programador deve codificar o tratador do evento 
+interface \textit{interfaces/Thread.nc}, portanto o programador deve codificar o tratador do evento 
 \textit{Thread.run} e amarrá-lo a este componente. Em segundo lugar, conecta entre si todos os componentes 
 importantes para o gerenciamento. Os principais são \textit{system/MainC} para inicialização da thread no \textit{boot} do sistema,
  \textit{system/ThreadInfoP.nc} como visto em \ref{ThreadInfoP}, e \textit{system/StaticThreadC.nc} como visto em
@@ -334,7 +339,8 @@ Por último, são definidas duas macros para preparação da thread.
    __asm__("out __SP_H__,%B0\n\t out __SP_L__,%A0"::"r"(NEW))
  
 #define PREPARE_THREAD(t, thread_ptr)                      \
-{  uint16_t temp;                                        \
+{  
+   uint16_t temp;                                        \
    SWAP_STACK_PTR(temp, (t)->stack_ptr);                 \
    __asm__("push %A0\n push %B0"::"r"(&(thread_ptr)));   \
    SWAP_STACK_PTR((t)->stack_ptr, temp);                 \
@@ -353,6 +359,8 @@ command error_t ThreadScheduler.initThread(uint8_t id) {
     t->init_block = current_thread->init_block;
     call BitArrayUtils.clrArray(t->joinedOnMe, sizeof(t->joinedOnMe));
     PREPARE_THREAD(t, threadWrapper);
+        //O codigo abaixo e' definicao da macro PREPARE_THREAD,
+        //inserido aqui para facilitar o entendimento do codigo.
         //uint16_t temp;                                        \
         //SWAP_STACK_PTR(temp, (t)->stack_ptr);                 \
         //__asm__("push %A0\n push %B0"::"r"(&(threadWrapper)));   \

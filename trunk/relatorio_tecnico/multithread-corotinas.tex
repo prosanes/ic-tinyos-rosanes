@@ -1,0 +1,22 @@
+\textit{Multithreading} refere-se a capacidade do sistema operacional e/ou do hardware de suportar diversas linhas de
+execução, chamadas de \textit{threads}. Cada \textit{thread} contém um contexto que inclui instruções, variáveis, uma 
+pilha de execução, e um bloco de controle. Isso permite que as threads intercalem o uso da CPU, que passa a ser
+gerênciada por um escalonador.
+
+O escalonador utiliza de um artifício chamado preempção. Isso significa que uma thread em excução pode ser interrompida, 
+após qualquer instrução, para ceder a CPU. Esta técnica permite que a CPU seja usada por todos, sem intervenção
+do programador. Ou seja, o \textit{thread} não diz quando vai ceder. 
+
+Quando diferentes \textit{thread}s compartilham dados, o uso de preempção pode causar condições de corrida. Isso gera a
+necessidade de gerênciar a concorrência de recursos, através do uso de primitivas que garantam exclusão mútua e sincronização.
+Porém essas primitivas são custosas.~\cite{Stallings/04}
+
+Rotinas coopertativas, ou co-rotinas, têm as mesma características dos \textit{threads}, quando classificadas como
+completas~\cite[s. 2.4]{Moura/04}. Porém elas cooperam no uso da CPU através de transferência explicita de controle. Com
+isso elimina-se a necessidade de preempção, e consequentemente de gerêcia à concorrência de recursos.
+
+Co-rotinas podem ser classificadas de acordo com o tipo de transferência de controle: simétricas e assimétricas. 
+Co-rotinas do primeiro tipo têm a capacidade de ceder o controle para outra co-rotina explicitamente nomeada.
+As assimétricas só podem ceder o controle para a co-rotina que lhes ativou. Possuêm um comportamente semelhante a de
+funções.~\cite{Moura/04}
+

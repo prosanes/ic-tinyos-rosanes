@@ -5,7 +5,7 @@ e escalonador multi-nível.
 
 %-----------------------------
 \subsection{Escalonador EDF (\textit{Earliest Deadline First})}\label{escalonadoredf}
-Este escalonador \footnote{O \cite{TEP106} disponibiliza um protótipo} aceita tarefas com deadline e 
+Este escalonador \footnote{O TEP 106~\cite{TEP106} disponibiliza um protótipo} aceita tarefas com deadline e 
 elege aquelas com menor \textit{deadline} para executar. A interface usada para criar
 esse tipo de tarefas é \textit{TaskDeadline}. O \textit{deadline} é passado por parâmetro pela função \textit{postTask}.
 As tarefas básicas (\textit{TaskBasic}) também são aceitas, como recomendado pelo TEP 106\cite{TEP106}.

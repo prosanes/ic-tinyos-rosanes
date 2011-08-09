@@ -10,18 +10,13 @@ module BlinkC @safe()
 }
 implementation
 {
-  task void tarefa()
-  {
-      dbg("BlinkC", "tarefa\n");
-  }
-
   event void Boot.booted()
   {
-    post tarefa();
-
     call Timer0.startPeriodic( 250 );
     call Timer1.startPeriodic( 500 );
     call Timer2.startPeriodic( 1000 );
+
+    post tarefa();
   }
 
   event void Timer0.fired()
@@ -37,5 +32,10 @@ implementation
   event void Timer2.fired()
   {
     call Leds.led2Toggle();
+  }
+
+  task void tarefa()
+  {
+      dbg("BlinkC", "tarefa\n");
   }
 }

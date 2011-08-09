@@ -1,0 +1,15 @@
+No TinyOS, percebe-se uma divisão clara dos tipos de serviços: 
+\begin{description}
+    \item[Rádio] Comunicação sem fio entre diferentes nós da rede através de ondas de rádio.
+    \item[Sensor] Sensoriamento de diferentes características do ambiente.
+    \item[Serial] Comunicação por fio entre um nó e uma estação base (PC).
+    \item[Básica] Outros serviços, como por exemplo temporizador.
+\end{description}
+Por isso, desenvolvemos um escalonador que divide as tarefas de acordo com os tipos definidos acima.
+Cada tipo de tarefa tem sua própria fila com política \textit{First-in First-out}, e as filas mais importantes devem ser
+atendidas por completo para que as outras sejam antendidas.
+
+%!!!detalhar esse trecho melhor depois!!!
+%Definiu-se que a ordem de prioridade seria serial, rádio, sensor e por último básica.
+
+

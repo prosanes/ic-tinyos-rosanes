@@ -1,38 +1,31 @@
 As tarefas, por serem procedimentos adiados, necessitam de algoritmos de escalonamento. Estes algoritmos também não
 podem ser preemptivos, devido a natureza das tarefas do TinyOS.
 O algoritmo mais simples, e também o padrão do TinyOS, é o \textit{First-Come, First-Served}, onde as tarefas são
-atendidas segundo a ordem de chegada. Tem um \textit{overhead} mínimo, e não gera \textit{starvation}. Pode ter um tempo de
-resposta alto, se houver uma grande quantidade de tarefas na fila.
+atendidas segundo a ordem de chegada. O \textit{overhead} gerado é mínimo, e não há possibilidade de \textit{starvation}. 
+Porém o tempo de resposta pode ser alto, se houver uma grande quantidade de tarefas na fila.
 
-Escalonamento utilizando \textit{deadline} é muito usado em sistemas operacionais de tempo real. Neste algoritmo
+Escalonamento utilizando \textit{deadline} é muito usado em sistemas operacionais de tempo real~\cite{Stallings/04}. Neste algoritmo
 a próxima tarefa a ser executada é aquela com menor prazo (\textit{deadline}). As diversas variações deste algoritmo utilizam
-parâmetros como: 
-\begin{itemize}
-    \item Tempo de entrada na fila de prontos.
-    \item Prazo para começar a tarefa.
-    \item Prazo para terminar a tarefa.
-    \item Tempo de processamento.
-    \item Recursos utilizados.
-    \item Prioridade.
-    \item Existência de preempção.
-\end{itemize}
+parâmetros como: tempo de entrada na fila de prontos, prazo para começar a tarefa, prazo para terminar a tarefa, tempo
+de processamento, recursos utilizados, prioridade, existência de preempção.
 Porém, o principal parâmetro utilizado pelos algoritmos é a existência ou não de preempção. Caso não exista preempção,
 faz mais sentido utilizarmos, no escalonamento, o prazo para começar a tarefa. Caso exista preempção, o prazo para
 terminar a tarefa é utilizado~\cite{Stallings/04}.
-Um \textit{overhead} bem maior passa a existir, porém o tempo de resposta pode ser aproximadamente estipulado pela
-própria tarefa.
-% !!! Talvez devesse melhorar esta parte !!!
+Um \textit{overhead} maior passa a existir, devido à ordenação das tarefas na fila e à preempção, caso exista.
+Porém o tempo de resposta pode ser aproximadamente estipulado pela própria tarefa.
 
-Em um escalonamento de prioridade fixa, cada tarefa indica, no momento de entrada para fila de prontos, sua importância em relação às
+Em um escalonamento de prioridade fixa, cada tarefa indica, no momento de entrada para fila de prontos (tempo de
+execução), sua importância em relação às
 outras tarefas. Nestes algoritmos podemos ter preempção por parcela de tempo, na entrada de outras tarefas, ou não ter preempção. 
 No primeiro tipo, pode existir um \textit{overhead} desnecessário quando o \textit{time-slice} da tarefa atual terminou,
-porém não existe nenhuma outra com prioridade maior. O segundo tipo resolve este problema: Se existe uma ordem de
-tarefas na fila, esta ordem só pode mudar caso uma nova tarefa entre.
-Quando não há preempção, a troca de tarefa só ocorre no final da que está executando.
-Neste escalonamento também há um \textit{overhead} grande, devido a ordenação das tarefas na fila. Também é introduzido
-a possibilidade de \textit{starvation} e um alto tempo de resposta para tarefas de baixa prioridade.
+porém não existe nenhuma outra com prioridade maior. O segundo tipo resolve este problema: se existe uma ordem de
+tarefas na fila, esta ordem só pode ser alterada caso uma nova tarefa entre.
+Quando não há preempção, a troca de tarefa só ocorre no término da execução de uma tarefa.
+Neste escalonamento também há um \textit{overhead} maior, devido a ordenação das tarefas na fila.
+A possibilidade de \textit{starvation} passa a existir, e o tempo de resposta varia de acordo com a prioridade das
+tarefas.
 
-O escalonamento de multi-nível é um caso especial do de prioridade fixa. 
+O escalonamento de multi-nível é um caso especial do escalonamento de prioridade fixa. 
 Cada tarefa determina seu nível de prioridade em tempo de compilação. Onde cada nível de prioridade tem uma fila, com 
 política \textit{First-in First-out}, e as filas mais importantes devem ser atendidas por completo para que outra sejam
 atendidas.

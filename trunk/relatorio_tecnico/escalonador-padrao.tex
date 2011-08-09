@@ -3,14 +3,14 @@ O escalonador padrão adota uma política {\em First-in First-out} para agendar 
 cuida de parte do gerenciamento de energia, colocando a CPU em um estado de baixo consumo quando
 não há nada para ser executado.
 
-O programador ao codificar uma tarefa utiliza duas sintaxes:
+O programador, ao codificar uma tarefa, utiliza duas contruções:
 \begin{lstlisting}[frame=none]
     post nome_da_tarefa();
     task void nome_da_tarefa() { //Definicao da tarefa }
 \end{lstlisting}
-Essas duas sintaxes são transformadas pelo compilador, fazendo com que a aplicação implemente uma interface chamada \textit{TaskBasic}.
+Essas duas contruções são transformadas pelo compilador, fazendo com que a aplicação implemente uma interface chamada \textit{TaskBasic}.
 A primeira é transformada em um comando, usado para indicar ao escalonador que esta tarefa deve entrar na fila.
-O escalonador por sua vez, quando decidir que esta tarefa será a proxima a executar, sinalizará o evento relacionado a
+O escalonador por sua vez, quando decidir que esta tarefa será a próxima a executar, sinalizará o evento relacionado a
 este comando.
 A segunda sintaxe é transformada no tratador deste evento, que implementa o que a tarefa deverá executar quando
 escalonada.
@@ -32,7 +32,7 @@ interface Scheduler {
 \end{lstlisting}
 A implementação dessas interfaces se dá da seguinte forma:
 \begin{description}
-    \item[command postTask()] Decide aonde a tarefa será inserida na fila.
+    \item[command postTask()] Decide onde a tarefa será inserida na fila.
     \item[event runTask()] Indica que a tarefa deve executar.
     \item[command runNextTask()] Retira a primeira tarefa da fila e sinaliza sua execução com o evento
     \textit{runTask()}
@@ -49,9 +49,6 @@ interface TaskDeadline<precision_tag> {
     event void runTask(); }
 \end{lstlisting}
 
-Quando uma aplicação implementa de diversas formas uma mesma interface, esta deve ser parametrizada. Assim cada
-implementação receberá um identificador, de modo que o evento ative o tratador correto~\cite[s. 8.3 e 9]{LevisGay/09}.
-
 Na versão 2.1.x do TinyOS é possível mudar a política de gerenciamento de tarefas substituindo 
 o componente escalonador padrão. Qualquer novo escalonador tem de
 aceitar a interface de tarefa padrão (\textit{TaskBasic}), e garantir a execução de todas as tarefas 
@@ -62,19 +59,6 @@ escalonador.
 Para alterar o escalonador basta definir um novo componente \textit{TinySchedulerC} e adicioná-lo ao diretório da
 aplicação. Neste novo componente, a interface \textit{Scheduler} deve ser associada ao componente que implementa o
 escalonador proposto, como ilutrado abaixo.
-\begin{lstlisting}
-configuration TinySchedulerC {
-    provides interface Scheduler;
-    ...
-}
-implementation  {
-    components SchedulerDeadlineP as Sched;
-    ...
-    Scheduler = Sched; 
-    ...
-}
-\end{lstlisting}
-
 
 Por último, deve-se amarrar a interface da tarefa com a interface do escalonador. Por exemplo:
 \begin{lstlisting}
@@ -92,53 +76,7 @@ implementation  {
 }
 \end{lstlisting}
 
-Um exemplo de aplicação que utiliza um escalonador novo pode ser visto no anexo \ref{a:appTeste}
-
-%------------------------------------------------------------------%
-%------------------------------------------------------------------%
-%------------------------------------------------------------------%
-
-\subsubsection{Extensão do Simulador TOSSIM}
+Um exemplo de aplicação que utiliza um escalonador novo pode ser visto no anexo \ref{a:appTeste}.
 Para que o escalonador funcione corretamente no simulador TOSSIM é preciso adicionar funções que lidam com eventos no
-simulador. Essas funções foram retiradas do arquivo
-\textit{tinyOS-root-dir/tos/lib/tossim/SimSchedulerBasicP.nc}.
-Primeiro é alterar a implementação das interfaces de tarefa e da interface \textit{Scheduler}, criando as funções e varáveis do código abaixo:
-\begin{lstlisting}[frame=single]
-  bool sim_scheduler_event_pending = FALSE;
-  sim_event_t sim_scheduler_event;
-
-  int sim_config_task_latency() {return 100;}
-
-  void sim_scheduler_submit_event() {
-    if (sim_scheduler_event_pending == FALSE) {
-      sim_scheduler_event.time = sim_time() + sim_config_task_latency();
-      sim_queue_insert(&sim_scheduler_event);
-      sim_scheduler_event_pending = TRUE;
-    }
-  }
-
-  void sim_scheduler_event_handle(sim_event_t* e) {
-    sim_scheduler_event_pending = FALSE;
-    if (call Scheduler.runNextTask()) 
-      sim_scheduler_submit_event();
-  }
-
-  void sim_scheduler_event_init(sim_event_t* e) {
-    e->mote = sim_node();
-    e->force = 0;
-    e->data = NULL;
-    e->handle = sim_scheduler_event_handle;
-    e->cleanup = sim_queue_cleanup_none;
-  }
-\end{lstlisting}
-
-Depois, no comando \textit{init()} deve-se adicionar:
-\begin{lstlisting}[frame=single]
-  sim_scheduler_event_pending = FALSE;
-  sim_scheduler_event_init(&sim_scheduler_event);
-\end{lstlisting}
-E, por último, nos comandos \textit{postTask()}, deve-se adicionar:
-\begin{lstlisting}[frame=single]
-  sim_scheduler_submit_event();
-\end{lstlisting}
-
+simulador. Um exemplo desta extensão poder ser achada no arquivo
+\textit{tinyOS-root-dir/tos/lib/tossim/SimSchedulerBasicP.nc}, ou no apêndice \ref{a:escalonador-tossim}

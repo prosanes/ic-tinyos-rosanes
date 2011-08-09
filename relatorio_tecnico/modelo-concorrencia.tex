@@ -13,11 +13,24 @@ Para que isso seja possível, o código em nesC é dividido em dois tipos:
     \item[Código Síncrono] Código alcançável somente a partir de tarefas.
 \end{description}
 
-Eventos e comandos que podem ser sinalizados ou chamados a partir de um tratador de interrupção são códigos assíncronos.
-Eles podem interromper a execução de tratadores de eventos, comandos e \textit{tasks}. 
-Por isso devem ser marcados como \textit{async} no código fonte. 
-Condições de corrida podem ocorrer quando esses trechos de código acessam variáveis compartilhadas.
-Para contornar isso, deve-se usar o comando \textit{atomic} ou \textit{power locks}.
+Como visto na seção \ref{inicializacao}, ao final do processo de inicialização, as
+interrupções são ativadas, e o evento \textit{Boot.booted} é sinalizado. O tratador deste evento, implementado no 
+módulo principal da aplicação, é executado. E por último, o TinyOS entra em um laço infinito, onde as tarefas passam 
+a ser atendidas. Este fluxo, quando não interrompido, é chamado de fluxo principal do TinyOS, e corresponde ao código
+síncrono. Como não há preempção entre as tarefas, variáveis compartilhadas entre elas são imunes a condições de corrida.
+Porém quando há uma interrupção de hardware, o tratador da interrupção assume o controle, e o fluxo principal é congelado 
+até o termino daquele. Qualquer variável compartilhada, quando acessada por estes códigos assíncronos, está sujeita a condições
+de corrida.
+
+Como tarefas são postergadas, e atendidas pelo fluxo de execução principal, elas são usadas para fazer uma transição de
+contexto assíncrono para síncrono.
+Para fazer isto, um tratador de interrupção deve fazer somente o processamento mínimo, como transferência de dados entre o
+\textit{buffer} e a memória. Após isto, deve postar uma tarefa para sinalizar o evento 
+de conclusão da operação de E/S. Quando a tarefa for atentida, ela sinalizará o evento de forma síncrona. E portanto,
+seu tratador também será um código síncrono.
+
+Para auxiliar no controle de condições de corrida, qualquer código assíncrono devem ser marcados como \textit{async} no código fonte. 
+Para contornar isto, deve-se usar o comando \textit{atomic} ou \textit{power locks}.
 
 O comando \textit{atomic} garante exclusão mútua desabilitando interrupções. Dois fatos
 importantes surgem com o seu uso, primeiro a ativação e desativação de interrupções consome ciclos de CPU. Segundo,
@@ -28,7 +41,7 @@ Algumas vezes é preciso usar um determinado hardware por um longo tempo, sem co
 Como a necessidade de atomicidade não está no processador e sim no hardware, 
 pode-se conceder sua exclusividade a somente um usuário (componente) através de
 \textit{Power locks}. Para isso, primeiro é feito um pedido através de um comando, depois quando o recurso desejado
-estiver disponível, um evento é sinalizado. Assim não há espera ocupada (similar ao mecanismo de semáforos). 
+estiver disponível, um evento é sinalizado. Assim não há espera ocupada. 
 Existe a possibilidade de requisição imediata. 
 Nesse caso nenhum evento será sinalizado: se o recurso não estiver locado por outro usuário (componente), ele será
 imediatamente cedido, caso contrário, o comando retornará falso. 

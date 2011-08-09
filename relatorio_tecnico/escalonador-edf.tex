@@ -1,0 +1,20 @@
+Este escalonador \footnote{O TEP 106~\cite{TEP106} disponibiliza um protótipo} aceita tarefas com deadline e 
+elege aquelas com menor \textit{deadline} para executar. A interface usada para criar
+esse tipo de tarefas é \textit{TaskDeadline}. O \textit{deadline} é passado por parâmetro pela função \textit{postTask}.
+As tarefas básicas (\textit{TaskBasic}) também são aceitas, como recomendado pelo TEP 106\cite{TEP106}.
+
+Em contraste, o escalonador não segue outra recomendação: não elimina a possibilidade de 
+\textit{starvation} pois as tarefas
+básicas só são atendidas quando não há nenhuma tarefa com \textit{deadline} esperando para executar. 
+A fila de prioridades é implementada da mesma forma que a do escalonador 
+padrão\ref{escalonadorpadrao}, a única mudança está na inserção. Para
+inserir, a fila é percorrida do começo até o fim, procurando-se o local exato de inserção.
+Portanto, o custo de inserir é $\bigcirc(n)$, e o custo de retirar da fila é $\bigcirc(1)$. 
+%Uma possível modificação seria utilizar uma \textit{heap}, mudando o custo de inserção  de 
+%retirada para $\bigcirc(\logn)$.
+
+%!!!explicar esse trecho melhor depois!!!
+%A princípio tive problemas com o componente \textit{Counter32khzC}, 
+%pois ele não existe para  a plataforma \textit{micaz}. Para poder compilar o
+%escalonador foi preciso retirá-lo. Ele era usado para calcular a hora atual, e somar ao deadline. 
+%Sem esse componente, temos um escalonador de prioridades (mínimo). 

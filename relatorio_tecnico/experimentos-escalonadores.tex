@@ -1,9 +1,11 @@
-\subsection{Experimentos com o escalonador de tarefas padrão}
+\paragraph{Experimentos com o escalonador de tarefas padrão}
 Antes de começar a desenvolver outros escalonadores de tarefas, foi feito um experimento com o escalonador 
 padrão que utiliza a política \textit{First in, First Out}.
-Para medir a complexidade na prática, foi desenvolvida uma aplicação de teste~\ref{a:appTeste}. Nela cada tarefa executa um loop de 65000
+Para medir a complexidade na prática, foi desenvolvida uma aplicação de teste (anexo~\ref{a:appTeste}). Nela cada tarefa executa um loop de 65000
 iterações, fazendo uma simples multiplicação em cada iteração. O número de tarefas variou entre 20, 50 e 100.
-Na tabela a seguir pode-se ver o tempo de execução em microsegundos:
+O tempo de execução foi medido em uma plataforma \textit{MicaZ}, utilizando o temporizador
+\textit{Counter<TMicro,uint32\_t>}, utilizando uma precisão de microsegundos.
+Os valores medidos não variaram mais de uma unidade entre diferentes execuções.
 \begin{center}
     \begin{tabular}{ | l | l | l | l | p{5cm} |}
     \hline
@@ -13,12 +15,13 @@ Na tabela a seguir pode-se ver o tempo de execução em microsegundos:
 \end{center}
 
 %---------------------------------
-\subsection{Experimentos com o escalonador com prioridades}
+\paragraph{Experimentos com o escalonador com prioridades}
 Para avaliar o desempenho com o escalonador com prioridades foi desenvolvida a mesma aplicação de teste,
 onde cada tarefa executa um loop de 65000 iterações, fazendo uma simples multiplicação em cada iteração. 
 O número de tarefas variou entre 20, 50 e 100.
 O tempo de execução foi medido em uma plataforma \textit{MicaZ}, utilizando o temporizador 
-\textit{Counter<TMicro,uint32 t>}, utilizando uma precisão de microsegundos.
+\textit{Counter<TMicro,uint32\_t>}, utilizando uma precisão de microsegundos. 
+Os valores medidos não variaram mais de uma unidade entre diferentes execuções.
 \begin{center}
     \begin{tabular}{ | l | l | l | l | p{5cm} |}
     \hline

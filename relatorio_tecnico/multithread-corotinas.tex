@@ -1,22 +1,29 @@
 \textit{Multithreading} refere-se a capacidade do sistema operacional e/ou do hardware de suportar diversas linhas de
 execução, chamadas de \textit{threads}. Cada \textit{thread} contém um contexto que inclui instruções, variáveis, uma 
-pilha de execução, e um bloco de controle. Isso permite que as threads intercalem o uso da CPU, que passa a ser
-gerênciada por um escalonador.
+pilha de execução, e um bloco de controle. O suporte de diversar unidades de execução se dá por meio de paralelismo real
+ou aparente. O primeiro tipo ocorre quando diferentes \textit{threads} executam em diferentes processadores, núcleos, ou
+em processadores superescalares com multiplos bancos de registradores. O segundo tipo ocorre quando as \textit{threads}
+intercalam o uso da CPU, por meio da gerência de um escalonador.
 
-O escalonador utiliza de um artifício chamado preempção. Isso significa que uma thread em excução pode ser interrompida, 
-após qualquer instrução, para ceder a CPU. Esta técnica permite que a CPU seja usada por todos, sem intervenção
-do programador. Ou seja, o \textit{thread} não diz quando vai ceder. 
+Em \textit{multithreading}, o escalonador faz uso de um artifício chamado preempção. Isso significa que uma thread em excução pode ser interrompida, 
+após qualquer instrução, para ceder a CPU a outra \textit{thread}. Esta técnica permite que a CPU seja usada por todos, sem intervenção
+do programador. Ou seja, a alternância de uso da CPU entre as \textit{threads} ocorre de forma independente ao código
+implementado por elas.
 
-Quando diferentes \textit{thread}s compartilham dados, o uso de preempção pode causar condições de corrida. Isso gera a
-necessidade de gerênciar a concorrência de recursos, através do uso de primitivas que garantam exclusão mútua e sincronização.
-Porém essas primitivas são custosas.~\cite{Stallings/04}
+Quando diferentes linhas de execução compartilham dados, o uso de preempção pode causar problemas de integridade destes
+dados. Este problema, conhecido como condição de corrida, ocorre quando a preempção modifica a sequência de instruções
+de uma operação. Para permitir que a operação execute sem interrupções, são utilizadas primitivas que desabilitam a
+preempção temporariamente, garantindo a exclusão mútua de tais regiões.
+Quando diversas \textit{threads} estão trabalhando em conjunto, as vezes é preciso garantir uma ordem de execução. Isso
+é garantido com o uso de primitivas de sincronização.
+Porém essas primitivas que gerenciam o uso concorrente de recurso são custosas.~\cite{Stallings/04}
 
-Rotinas coopertativas, ou co-rotinas, têm as mesma características dos \textit{threads}, quando classificadas como
-completas~\cite[s. 2.4]{Moura/04}. Porém elas cooperam no uso da CPU através de transferência explicita de controle. Com
-isso elimina-se a necessidade de preempção, e consequentemente de gerêcia à concorrência de recursos.
+Rotinas coopertativas, ou co-rotinas, têm as mesmas características das \textit{threads}, quando classificadas como
+completas~\cite[s. 2.4]{Moura/04}. Porém elas cooperam no uso da CPU através de transferência explícita de controle. Com
+isso elimina-se a necessidade de preempção, e consequentemente de gerêcia do uso concorrente de recursos.
 
 Co-rotinas podem ser classificadas de acordo com o tipo de transferência de controle: simétricas e assimétricas. 
 Co-rotinas do primeiro tipo têm a capacidade de ceder o controle para outra co-rotina explicitamente nomeada.
-As assimétricas só podem ceder o controle para a co-rotina que lhes ativou. Possuêm um comportamente semelhante a de
-funções.~\cite{Moura/04}
+As assimétricas só podem ceder o controle para a co-rotina que lhes ativou e possuêm um comportamente semelhante ao
+comportamento de funções.~\cite{Moura/04}
 

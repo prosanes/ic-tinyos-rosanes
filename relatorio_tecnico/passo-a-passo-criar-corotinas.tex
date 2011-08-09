@@ -1,0 +1,148 @@
+Texto de forma informal:
+\begin{description}
+\item Incluir um novo target para o Make. Esse target é uma modificação do target do TOSThreads. 
+\begin{lstlisting}
+#Set up flag signifying coroutines are enabled
+COROUTINES = COROUTINES
+PFLAGS += -D$(COROUTINES)
+TOS_COROUTINES_DIR ?= $(TOSDIR)/lib/coroutines
+
+#Include directories required by all platforms and mcus
+CFLAGS += -I$(TOS_COROUTINES_DIR)/system
+CFLAGS += -I$(TOS_COROUTINES_DIR)/interfaces
+CFLAGS += -I$(TOS_COROUTINES_DIR)/types
+CFLAGS += -I$(TOS_COROUTINES_DIR)/lib/serial
+
+#Setup the coroutine scheduler for use by redefining the 
+#name of the task scheduler to use
+PFLAGS += -tosscheduler=TinyTaskSchedulerC,
+    TinyTaskSchedulerC.TaskBasic,TaskBasic,
+    TaskBasic,runTask,postTask
+
+#Msp430 specific include directories on tested platforms
+COROUTINES_MSP430_DIR = $(TOS_COROUTINES_DIR)/chips/msp430
+COROUTINES_MSP430_INCLUDE_DIRS = -I$(COROUTINES_MSP430_DIR)
+\end{lstlisting}
+
+\item Deve-se criar uma copia da pasta tosthreads, e fazer esse target apontar para a cópia.
+\begin{verbose}
+cp /opt/tinyos-2.x.x/tos/lib/tosthreads /opt/tinyos-2.x.x/tos/lib/coroutines
+\end{verbose}
+
+\item Tirar o preemptionAlarm dos arquivos TinyThreadSchedulerP(C).nc. Comentando todos seus usos. Alguns exemplos abaixo:
+\begin{lstlisting}
+//interface Timer<TMilli> as PreemptionAlarm;
+/*
+void task alarmTask() {
+    uint8_t temp;
+    atomic temp = num_runnable_threads;
+    if(temp <= 1)
+        call PreemptionAlarm.stop();
+    else if(temp > 1)
+        call PreemptionAlarm.startOneShot(TOSTHREAD_PREEMPTION_PERIOD);
+}
+*/
+\end{lstlisting}
+
+\item Modificar a interface Thread.nc: Incluir comando yield().
+\begin{lstlisting}
+interface Thread {
+    command error_t start(void* arg);
+    command error_t stop();
+    command error_t pause();
+    command error_t resume();
+    command error_t yield();
+    command error_t sleep(uint32_t milli);
+    event void run(void* arg);
+    command error_t join();
+}
+\end{lstlisting}
+
+\item Modificar StaticThreadP.nc para implementar o comando yield(). 
+\begin{lstlisting}
+command error_t Thread.yield[uint8_t id]() {
+    return call ThreadScheduler.interruptCurrentThread();
+}
+\end{lstlisting}
+
+\item  Modificar a interface ThreadScheduler.nc: Adicionar comando BrieflyInterruptCurrentThread().
+\begin{lstlisting}
+interface ThreadScheduler {
+    async command uint8_t currentThreadId();
+    //...
+
+    async command error_t suspendCurrentThread();
+    async command error_t interruptCurrentThread();
+    async command error_t brieflyInterruptCurrentThread();
+    //...
+}
+\end{lstlisting}
+
+\item Modificar TinyThreadSchedulerP.nc para implementar o comando acima.
+\begin{lstlisting}
+command error_t ThreadScheduler.brieflyInterruptCurrentThread() {  
+    atomic { 
+        if(current_thread->state == TOSTHREAD_STATE_ACTIVE) { 
+            briefly_interrupted_thread = current_thread; 
+            briefly_interrupted_thread->state =  
+            TOSTHREAD_STATE_BRIEFLYINTERRUPTED; 
+            interrupt(current_thread); 
+            return SUCCESS; 
+        } 
+    return FAIL; 
+    } 
+} 
+\end{lstlisting}
+
+\item Modificar ThreadSchedulerBoot.booted(): Iniciar variável briefly\_interrupted\_thread do comando a cima.
+\begin{lstlisting}
+void ThreadSchedulerBoot.booted() {
+    num_runnable_threads = 0;
+    tos_thread = call ThreadInfo.get[TOSTHREAD_TOS_THREAD_ID]();
+    tos_thread->id = TOSTHREAD_TOS_THREAD_ID;
+    call ThreadQueue.init(&ready_queue);
+
+    current_thread = tos_thread;
+    current_thread->state = TOSTHREAD_STATE_ACTIVE;
+    current_thread->init_block = NULL;
+
+    briefly_interrupted_thread = NULL;
+    signal TinyOSBoot.booted();
+}
+\end{lstlisting}
+
+\item Modificar ScheduleNextThread(): Fazer a verificação do briefly\_interrupted\_thread.
+\begin{lstlisting}
+scheduleNextThread() {
+    if(tos_thread->state == TOSTHREAD_STATE_READY)
+        current_thread = tos_thread;
+    else if (briefly_interrupted_thread != NULL) {
+        current_thread = briefly_interrupted_thread;
+        briefly_interrupted_thread = NULL;
+    } else
+        current_thread = call ThreadQueue.dequeue(&ready_queue);
+
+    current_thread->state = TOSTHREAD_STATE_ACTIVE;
+}
+\end{lstlisting}
+
+\item Modificar arquivo TOSThreadInterruptP.nc.
+\begin{lstlisting}
+implementation {
+void interruptThread() __attribute__((noinline)) {
+    if(call ThreadScheduler.wakeupThread(TOSTHREAD_TOS_THREAD_ID) == SUCCESS)
+        if(call ThreadScheduler.currentThreadId() != TOSTHREAD_TOS_THREAD_ID)
+            call ThreadScheduler.brieflyInterruptCurrentThread();
+}
+\end{lstlisting}
+
+\item Modificar types/thread.h: Adicionar o estado BrieflyInterrupted.
+\begin{lstlisting}
+enum {
+    TOSTHREAD_STATE_INACTIVE    = 0,
+    TOSTHREAD_STATE_ACTIVE      = 1,
+    TOSTHREAD_STATE_READY       = 2,
+    TOSTHREAD_STATE_SUSPENDED   = 3,
+    TOSTHREAD_STATE_BRIEFLYINTERRUPTED = 4
+};
+\end{lstlisting}

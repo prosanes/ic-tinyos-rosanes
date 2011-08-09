@@ -1,0 +1,44 @@
+Para que o escalonador funcione corretamente no simulador TOSSIM é preciso adicionar funções que lidam com eventos no
+simulador. Essas funções foram retiradas do arquivo
+\textit{tinyOS-root-dir/tos/lib/tossim/SimSchedulerBasicP.nc}.
+Primeiro é preciso alterar a implementação das interfaces de tarefa e da interface \textit{Scheduler}, criando as
+funções e variáveis do código abaixo:
+\begin{lstlisting}[frame=single]
+  bool sim_scheduler_event_pending = FALSE;
+  sim_event_t sim_scheduler_event;
+
+  int sim_config_task_latency() {return 100;}
+
+  void sim_scheduler_submit_event() {
+    if (sim_scheduler_event_pending == FALSE) {
+      sim_scheduler_event.time = sim_time() + sim_config_task_latency();
+      sim_queue_insert(&sim_scheduler_event);
+      sim_scheduler_event_pending = TRUE;
+    }
+  }
+
+  void sim_scheduler_event_handle(sim_event_t* e) {
+    sim_scheduler_event_pending = FALSE;
+    if (call Scheduler.runNextTask()) 
+      sim_scheduler_submit_event();
+  }
+
+  void sim_scheduler_event_init(sim_event_t* e) {
+    e->mote = sim_node();
+    e->force = 0;
+    e->data = NULL;
+    e->handle = sim_scheduler_event_handle;
+    e->cleanup = sim_queue_cleanup_none;
+  }
+\end{lstlisting}
+
+Depois, no comando \textit{init()} deve-se adicionar:
+\begin{lstlisting}[frame=single]
+  sim_scheduler_event_pending = FALSE;
+  sim_scheduler_event_init(&sim_scheduler_event);
+\end{lstlisting}
+E, por último, nos comandos \textit{postTask()}, deve-se adicionar:
+\begin{lstlisting}[frame=single]
+  sim_scheduler_submit_event();
+\end{lstlisting}
+
